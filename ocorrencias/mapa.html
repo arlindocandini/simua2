@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIU – Sistema Inteligente Urbano - SIMUA</title>
+{% extends 'base.html' %}
 
-    <!-- Fonte e ícones -->
+{% block title %}SIU – Sistema Inteligente Urbano - SIMUA{% endblock %}
+
+{% block extra_css %}
+<!-- Fonte e ícones -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -632,90 +630,11 @@
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
     </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo-section">
-                <div class="logo">
-                    <i class="fas fa-city"></i>
-                </div>
-                <div class="logo-text">
-                    <h1>SIMUA</h1>
-                    <p>{{ municipio|default('Goiânia - GO') }}</p>
-                </div>
-            </div>
-        </div>
+{% endblock %}
 
-        <nav class="nav-section">
-            <div class="nav-title">Menu Principal</div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
-                        <i class="fas fa-th-large"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span>Ocorrências</span>
-                        <span class="badge-nav">{{ pagination.total if pagination else 0 }}</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('os.lista') }}" class="nav-link">
-                        <i class="fas fa-clipboard-list"></i>
-                        <span>Ordens de Serviço</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
-                        <i class="fas fa-map-marked-alt"></i>
-                        <span>Score de Integridade Urbana</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-        <nav class="nav-section">
-            <div class="nav-title">Gestão</div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
-                        <i class="fas fa-users"></i>
-                        <span>Equipes</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
-                        <i class="fas fa-camera"></i>
-                        <span>Câmeras</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Relatórios</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-card">
-                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
-                <div class="user-info">
-                    <h4>{{ current_user.nome }}</h4>
-                    <p>{{ current_user.perfil|capitalize }}</p>
-                </div>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Main -->
-    <div class="main-content">
+{% block content %}
+<!-- Main -->
+    
         <!-- Top bar -->
         <div class="top-bar">
             <div class="page-title">
@@ -861,7 +780,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    
 
     <!-- Modal SIU -->
     <div id="modal-rua" class="modal-overlay">
@@ -883,7 +802,10 @@
     </div>
 
     <!-- Scripts Leaflet -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- JS do SIU -->
     <script>
@@ -1402,5 +1324,4 @@
                 </div>`;
         }
     </script>
-</body>
-</html>
+{% endblock %}

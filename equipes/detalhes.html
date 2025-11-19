@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ equipe.nome }} - SIMUA</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+{% extends 'base.html' %}
+
+{% block title %}{{ equipe.nome }} - SIMUA{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
     <style>
@@ -336,108 +335,10 @@
             }
         }
     </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo-section">
-                <div class="logo">
-                    <i class="fas fa-city"></i>
-                </div>
-                <div class="logo-text">
-                    <h1>SIMUA</h1>
-                    <p>{{ municipio|default('Goiânia - GO') }}</p>
-                </div>
-            </div>
-        </div>
+{% endblock %}
 
-        <nav class="nav-section">
-            <div class="nav-title">Menu Principal</div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
-                        <i class="fas fa-th-large"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span>Ocorrências</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('os.lista') }}" class="nav-link">
-                        <i class="fas fa-clipboard-list"></i>
-                        <span>Ordens de Serviço</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
-                        <i class="fas fa-map-marked-alt"></i>
-                        <span>Mapa Geral</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-        <nav class="nav-section">
-            <div class="nav-title">Gestão</div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="{{ url_for('equipes.lista') }}" class="nav-link active">
-                        <i class="fas fa-users"></i>
-                        <span>Equipes</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
-                        <i class="fas fa-camera"></i>
-                        <span>Câmeras</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Relatórios</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-        <nav class="nav-section">
-            <div class="nav-title">Sistema</div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-cog"></i>
-                        <span>Configurações</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-bell"></i>
-                        <span>Notificações</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-card">
-                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
-                <div class="user-info">
-                    <h4>{{ current_user.nome }}</h4>
-                    <p>{{ current_user.perfil|capitalize }}</p>
-                </div>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="top-bar">
+{% block content %}
+<div class="top-bar">
             <div class="page-title">
                 <h1>{{ equipe.nome }}</h1>
                 <p>Informações detalhadas e membros da equipe</p>
@@ -647,6 +548,4 @@
                 </div>
             </div>
         </div>
-    </div>
-</body>
-</html>
+{% endblock %}
