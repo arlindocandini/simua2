@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Erro Interno</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .error-container {
+            text-align: center;
+            color: white;
+        }
+        .error-code {
+            font-size: 120px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .error-message {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: white;
+            color: #fa709a;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1 class="error-code">500</h1>
+        <p class="error-message">Erro Interno do Servidor</p>
+        <a href="{{ url_for('auth.login') }}" class="btn">Voltar ao Login</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!-- Header com Notificações -->
+<header class="app-header">
+    <div class="header-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+    </div>
+    
+    <div class="header-right">
+        <!-- Notificações -->
+        <div class="notification-dropdown">
+            <button class="notification-btn" onclick="toggleNotifications()">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge" id="notificationCount">0</span>
+            </button>
+            
+            <div class="notification-panel" id="notificationPanel">
+                <div class="notification-header">
+                    <h3>Notificações</h3>
+                    <button onclick="marcarTodasLidas()" class="btn-link">Marcar todas como lidas</button>
+                </div>
+                
+                <div class="notification-list" id="notificationList">
+                    <div class="notification-empty">
+                        <i class="fas fa-inbox"></i>
+                        <p>Nenhuma notificação</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Usuário -->
+        <div class="user-dropdown">
+            <button class="user-btn" onclick="toggleUserMenu()">
+                {% if current_user.foto_perfil_url %}
+                    <img src="{{ current_user.foto_perfil_url }}" alt="Foto" class="user-avatar">
+                {% else %}
+                    <div class="user-avatar-placeholder">
+                        {{ current_user.nome_completo[0].upper() }}
+                    </div>
+                {% endif %}
+                <span class="user-name">{{ current_user.nome_completo.split()[0] }}</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            
+            <div class="user-menu" id="userMenu">
+                <div class="user-info">
+                    <strong>{{ current_user.nome_completo }}</strong>
+                    <small>{{ current_user.email }}</small>
+                    <span class="user-role">
+                        {% if current_user.is_admin %}
+                            <i class="fas fa-crown"></i> Administrador
+                        {% elif current_user.is_gestor %}
+                            <i class="fas fa-user-tie"></i> Gestor
+                        {% else %}
+                            <i class="fas fa-hard-hat"></i> Equipe de Campo
+                        {% endif %}
+                    </span>
+                </div>
+                <hr>
+                <a href="{{ url_for('perfil.index') }}">
+                    <i class="fas fa-user"></i> Meu Perfil
+                </a>
+                <a href="{{ url_for('perfil.configuracoes') }}">
+                    <i class="fas fa-cog"></i> Configurações
+                </a>
+                <hr>
+                <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<style>
+.app-header {
+    height: 70px;
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    position: fixed;
+    top: 0;
+    left: 250px;
+    right: 0;
+    z-index: 999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #333;
+    cursor: pointer;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Notificações */
+.notification-dropdown {
+    position: relative;
+}
+
+.notification-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #666;
+    cursor: pointer;
+    position: relative;
+    padding: 10px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #ff4c4c;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    display: none;
+}
+
+.notification-badge.show {
+    display: block;
+}
+
+.notification-panel {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    width: 350px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: none;
+    max-height: 500px;
+    overflow: hidden;
+}
+
+.notification-panel.show {
+    display: block;
+}
+
+.notification-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #4CAF50;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-empty {
+    padding: 40px;
+    text-align: center;
+    color: #999;
+}
+
+.notification-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notification-item:hover {
+    background: #f9f9f9;
+}
+
+.notification-item.unread {
+    background: #f0f8ff;
+}
+
+/* Menu Usuário */
+.user-dropdown {
+    position: relative;
+}
+
+.user-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.user-btn:hover {
+    background: #f5f5f5;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.user-menu {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    width: 250px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: none;
+    padding: 10px 0;
+}
+
+.user-menu.show {
+    display: block;
+}
+
+.user-info {
+    padding: 15px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.user-role {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 10px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.user-menu a {
+    display: block;
+    padding: 12px 20px;
+    color: #333;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.user-menu a:hover {
+    background: #f5f5f5;
+}
+
+.user-menu a i {
+    margin-right: 10px;
+    width: 20px;
+}
+
+.logout-link {
+    color: #ff4c4c !important;
+}
+
+@media (max-width: 768px) {
+    .app-header {
+        left: 70px;
+    }
+    
+    .menu-toggle {
+        display: block;
+    }
+    
+    .user-name {
+        display: none;
+    }
+}
+</style>
+
+<script>
+function toggleNotifications() {
+    document.getElementById('notificationPanel').classList.toggle('show');
+    document.getElementById('userMenu').classList.remove('show');
+}
+
+function toggleUserMenu() {
+    document.getElementById('userMenu').classList.toggle('show');
+    document.getElementById('notificationPanel').classList.remove('show');
+}
+
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('collapsed');
+}
+
+// Fechar dropdowns ao clicar fora
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.notification-dropdown')) {
+        document.getElementById('notificationPanel').classList.remove('show');
+    }
+    if (!event.target.closest('.user-dropdown')) {
+        document.getElementById('userMenu').classList.remove('show');
+    }
+});
+
+// Carregar notificações
+async function carregarNotificacoes() {
+    try {
+        const response = await fetch('/api/notificacoes');
+        const data = await response.json();
+        
+        const count = data.nao_lidas;
+        const badge = document.getElementById('notificationCount');
+        
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.classList.add('show');
+        } else {
+            badge.classList.remove('show');
+        }
+        
+        // Atualizar lista
+        const list = document.getElementById('notificationList');
+        if (data.notificacoes.length === 0) {
+            list.innerHTML = '<div class="notification-empty"><i class="fas fa-inbox"></i><p>Nenhuma notificação</p></div>';
+        } else {
+            list.innerHTML = data.notificacoes.map(n => `
+                <div class="notification-item ${n.lida ? '' : 'unread'}" onclick="marcarComoLida('${n.id}')">
+                    <strong>${n.titulo}</strong>
+                    <p>${n.mensagem}</p>
+                    <small>${n.created_at}</small>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar notificações:', error);
+    }
+}
+
+async function marcarComoLida(id) {
+    await fetch(`/api/notificacoes/${id}/ler`, { method: 'POST' });
+    carregarNotificacoes();
+}
+
+async function marcarTodasLidas() {
+    await fetch('/api/notificacoes/marcar-todas-lidas', { method: 'POST' });
+    carregarNotificacoes();
+}
+
+// Atualizar a cada 30 segundos
+setInterval(carregarNotificacoes, 30000);
+carregarNotificacoes();
+</script>

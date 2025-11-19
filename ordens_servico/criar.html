@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Ordem de Serviço - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+    <style>
+        /* Form container */
+        .form-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Alert boxes */
+        .alert-box {
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .alert-box i {
+            font-size: 20px;
+        }
+
+        /* Ocorrência preview card */
+        .preview-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .preview-header i {
+            font-size: 20px;
+            color: #f59e0b;
+        }
+
+        .preview-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .ocorrencia-preview {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .ocorrencia-content {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .ocorrencia-image {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .ocorrencia-details h4 {
+            margin: 0 0 12px 0;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-categoria {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .badge-urgencia {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .detail-item {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        .detail-item strong {
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .detail-item i {
+            color: #64748b;
+            width: 16px;
+        }
+
+        /* Form card */
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            animation: fadeInUp 0.4s ease-out;
+            animation-delay: 0.1s;
+        }
+
+        .form-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .form-card-header i {
+            font-size: 20px;
+            color: #3b82f6;
+        }
+
+        .form-card-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .form-field {
+            margin-bottom: 0;
+        }
+
+        .form-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+
+        .form-label i {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 40px;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-hint i {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* Form actions */
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 2px solid #f1f5f9;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        .btn i {
+            font-size: 16px;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ocorrencia-content {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link active">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Criar Ordem de Serviço</h1>
+                <p>Cadastre uma nova OS no sistema</p>
+            </div>
+            <div class="top-actions">
+                <a href="{{ url_for('os.lista') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="form-container">
+                <!-- Alert Info/Warning -->
+                {% if ocorrencia %}
+                <div class="alert-box alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Atenção:</strong> Esta OS será criada a partir da ocorrência selecionada.
+                    </div>
+                </div>
+
+                <!-- Preview da Ocorrência -->
+                <div class="preview-card">
+                    <div class="preview-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Ocorrência de Origem</h3>
+                    </div>
+                    <div class="ocorrencia-preview">
+                        <div class="ocorrencia-content">
+                            {% if ocorrencia.imagem_miniatura_path %}
+                                {% set img_path = ocorrencia.imagem_miniatura_path %}
+                            {% elif ocorrencia.imagem_path %}
+                                {% set img_path = ocorrencia.imagem_path %}
+                            {% else %}
+                                {% set img_path = 'img/no-image.png' %}
+                            {% endif %}
+
+                            <img src="{{ url_for('static', filename=img_path.replace('app/static/', '').replace('\\', '/')) }}" 
+                                alt="Imagem da Ocorrência"
+                                class="ocorrencia-image">
+
+                            <div class="ocorrencia-details">
+                                <h4>
+                                    <span class="badge badge-categoria">
+                                        {{ ocorrencia.categoria.replace('_', ' ').title() }}
+                                    </span>
+                                    <span class="badge badge-urgencia">
+                                        {{ ocorrencia.urgencia.replace('_', ' ').title() }}
+                                    </span>
+                                </h4>
+                                
+                                <div class="detail-item">
+                                    <strong>
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        Localização:
+                                    </strong>
+                                    {{ ocorrencia.endereco_completo }}
+                                </div>
+
+                                <div class="detail-item">
+                                    <strong>
+                                        <i class="fas fa-comment"></i>
+                                        Descrição:
+                                    </strong>
+                                    {{ ocorrencia.descricao_ia }}
+                                </div>
+
+                                <div class="detail-item">
+                                    <strong>
+                                        <i class="fas fa-calendar"></i>
+                                        Registrado em:
+                                    </strong>
+                                    {{ ocorrencia.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert-box alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Atenção:</strong> Nenhuma ocorrência foi selecionada. Você precisará informar a localização manualmente.
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Formulário -->
+                <form method="POST" action="{{ url_for('os.criar') }}" class="form-card" id="form-criar-os">
+                    <div class="form-card-header">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h3>Informações da Ordem de Serviço</h3>
+                    </div>
+
+                    <!-- CSRF Token -->
+                    {% if csrf_token %}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    {% endif %}
+                    
+                    {% if ocorrencia %}
+                    <input type="hidden" name="ocorrencia_id" value="{{ ocorrencia.id }}">
+                    {% endif %}
+
+                    <div class="form-grid">
+                        <!-- Categoria -->
+                        <div class="form-field">
+                            <label for="categoria" class="form-label">
+                                <i class="fas fa-tag"></i>
+                                Categoria
+                                <span class="required">*</span>
+                            </label>
+                            <select name="categoria" id="categoria" class="form-select" required>
+                                <option value="">Selecione uma categoria...</option>
+                                <option value="asfalto_dano" {% if ocorrencia and ocorrencia.categoria == 'asfalto_dano' %}selected{% endif %}>🕳️ Buraco / Asfalto Danificado</option>
+                                <option value="calcada_dano" {% if ocorrencia and ocorrencia.categoria == 'calcada_dano' %}selected{% endif %}>🚶 Calçada Danificada</option>
+                                <option value="iluminacao_publica" {% if ocorrencia and ocorrencia.categoria == 'iluminacao_publica' %}selected{% endif %}>💡 Iluminação Pública</option>
+                                <option value="fiacao_exposta" {% if ocorrencia and ocorrencia.categoria == 'fiacao_exposta' %}selected{% endif %}>⚡ Fiação Exposta</option>
+                                <option value="lixo_irregular" {% if ocorrencia and ocorrencia.categoria == 'lixo_irregular' %}selected{% endif %}>🗑️ Lixo / Entulho Irregular</option>
+                                <option value="arvore_dano" {% if ocorrencia and ocorrencia.categoria == 'arvore_dano' %}selected{% endif %}>🌳 Árvore / Galhos Danificados</option>
+                                <option value="mato_alto" {% if ocorrencia and ocorrencia.categoria == 'mato_alto' %}selected{% endif %}>🌿 Mato Alto</option>
+                                <option value="ponto_onibus_dano" {% if ocorrencia and ocorrencia.categoria == 'ponto_onibus_dano' %}selected{% endif %}>🚌 Ponto de Ônibus Danificado</option>
+                                <option value="vazamento_agua" {% if ocorrencia and ocorrencia.categoria == 'vazamento_agua' %}selected{% endif %}>💧 Vazamento de Água</option>
+                                <option value="fruta_na_pista" {% if ocorrencia and ocorrencia.categoria == 'fruta_na_pista' %}selected{% endif %}>🍂 Frutas / Resíduos na Pista</option>
+                                <option value="placa_dano" {% if ocorrencia and ocorrencia.categoria == 'placa_dano' %}selected{% endif %}>🚧 Placa de Trânsito Danificada</option>
+                                <option value="semaforo_defeito" {% if ocorrencia and ocorrencia.categoria == 'semaforo_defeito' %}selected{% endif %}>🚦 Semáforo com Defeito</option>
+                                <option value="sinalizacao_apagada" {% if ocorrencia and ocorrencia.categoria == 'sinalizacao_apagada' %}selected{% endif %}>〰️ Sinalização Apagada</option>
+                                <option value="objeto_na_pista" {% if ocorrencia and ocorrencia.categoria == 'objeto_na_pista' %}selected{% endif %}>🧱 Objeto / Obstrução na Pista</option>
+                                <option value="animal_na_pista" {% if ocorrencia and ocorrencia.categoria == 'animal_na_pista' %}selected{% endif %}>🐕 Animal na Pista</option>
+                                <option value="bueiro_entupido" {% if ocorrencia and ocorrencia.categoria == 'bueiro_entupido' %}selected{% endif %}>🕳️ Bueiro Entupido</option>
+                                <option value="bueiro_dano" {% if ocorrencia and ocorrencia.categoria == 'bueiro_dano' %}selected{% endif %}>🕳️ Bueiro Danificado</option>
+                                <option value="queimada" {% if ocorrencia and ocorrencia.categoria == 'queimada' %}selected{% endif %}>🔥 Queimada / Foco de Incêndio</option>
+                                <option value="obra_irregular" {% if ocorrencia and ocorrencia.categoria == 'obra_irregular' %}selected{% endif %}>🏗️ Obra Irregular</option>
+                            </select>
+                        </div>
+
+                        <!-- Prioridade -->
+                        <div class="form-field">
+                            <label for="prioridade" class="form-label">
+                                <i class="fas fa-exclamation-circle"></i>
+                                Prioridade
+                                <span class="required">*</span>
+                            </label>
+                            <select name="prioridade" id="prioridade" class="form-select" required>
+                                <option value="">Selecione uma prioridade...</option>
+                                <option value="critica">🔴 Crítica</option>
+                                <option value="alta" {% if ocorrencia and ocorrencia.urgencia in ['emergencia', 'urgente'] %}selected{% endif %}>🟠 Alta</option>
+                                <option value="media" {% if ocorrencia and ocorrencia.urgencia == 'pouco_urgente' %}selected{% endif %}>🟡 Média</option>
+                                <option value="baixa" {% if ocorrencia and ocorrencia.urgencia == 'nao_urgente' %}selected{% endif %}>🟢 Baixa</option>
+                            </select>
+                        </div>
+
+                        <!-- Equipe -->
+                        <div class="form-field">
+                            <label for="equipe_id" class="form-label">
+                                <i class="fas fa-users"></i>
+                                Equipe Responsável
+                            </label>
+                            <select name="equipe_id" id="equipe_id" class="form-select">
+                                <option value="">Selecione uma equipe...</option>
+                                {% if equipes %}
+                                    {% for equipe in equipes %}
+                                    <option value="{{ equipe.id }}">{{ equipe.nome }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Opcional: Atribuir a uma equipe específica
+                            </div>
+                        </div>
+
+                        <!-- Prazo -->
+                        <div class="form-field">
+                            <label for="prazo_execucao" class="form-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Prazo de Execução
+                                <span class="required">*</span>
+                            </label>
+                            <input type="date" 
+                                   name="prazo_execucao" 
+                                   id="prazo_execucao" 
+                                   class="form-input" 
+                                   min="{{ hoje if hoje else '' }}"
+                                   required>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Data limite para conclusão
+                            </div>
+                        </div>
+
+                        <!-- Localização (se não houver ocorrência) -->
+                        {% if not ocorrencia %}
+                        <div class="form-field">
+                            <label for="latitude" class="form-label">
+                                <i class="fas fa-map-pin"></i>
+                                Latitude
+                                <span class="required">*</span>
+                            </label>
+                            <input type="number" 
+                                   step="0.000001" 
+                                   name="latitude" 
+                                   id="latitude" 
+                                   class="form-input" 
+                                   placeholder="-16.686900"
+                                   required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="longitude" class="form-label">
+                                <i class="fas fa-map-pin"></i>
+                                Longitude
+                                <span class="required">*</span>
+                            </label>
+                            <input type="number" 
+                                   step="0.000001" 
+                                   name="longitude" 
+                                   id="longitude" 
+                                   class="form-input" 
+                                   placeholder="-49.264800"
+                                   required>
+                        </div>
+                        {% endif %}
+
+                        <!-- Descrição -->
+                        <div class="form-field full-width">
+                            <label for="descricao" class="form-label">
+                                <i class="fas fa-file-alt"></i>
+                                Descrição do Serviço
+                                <span class="required">*</span>
+                            </label>
+                            <textarea name="descricao" 
+                                      id="descricao" 
+                                      class="form-textarea" 
+                                      rows="4" 
+                                      placeholder="Descreva detalhadamente o serviço a ser executado..."
+                                      required>{% if ocorrencia %}{{ ocorrencia.descricao_ia }}{% endif %}</textarea>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Informações detalhadas sobre o que deve ser feito
+                            </div>
+                        </div>
+
+                        <!-- Observações -->
+                        <div class="form-field full-width">
+                            <label for="observacoes_criacao" class="form-label">
+                                <i class="fas fa-sticky-note"></i>
+                                Observações Adicionais
+                            </label>
+                            <textarea name="observacoes_criacao" 
+                                      id="observacoes_criacao" 
+                                      class="form-textarea" 
+                                      rows="3" 
+                                      placeholder="Observações, instruções especiais, materiais necessários..."></textarea>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Opcional: Informações complementares para a equipe
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="{{ url_for('os.lista') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check"></i>
+                            Criar Ordem de Serviço
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Definir data mínima como hoje
+        document.addEventListener('DOMContentLoaded', function() {
+            const prazoInput = document.getElementById('prazo_execucao');
+            const hoje = new Date();
+            
+            // Se não tiver data mínima definida pelo servidor, usar hoje
+            if (!prazoInput.min) {
+                prazoInput.min = hoje.toISOString().split('T')[0];
+            }
+            
+            // Sugerir prazo baseado na prioridade
+            const prioridadeSelect = document.getElementById('prioridade');
+            prioridadeSelect.addEventListener('change', function() {
+                const dias = {
+                    'critica': 1,
+                    'alta': 3,
+                    'media': 7,
+                    'baixa': 15
+                };
+                
+                const diasPrazo = dias[this.value] || 7;
+                const dataPrazo = new Date();
+                dataPrazo.setDate(dataPrazo.getDate() + diasPrazo);
+                
+                prazoInput.value = dataPrazo.toISOString().split('T')[0];
+            });
+            
+            // Se houver prioridade pré-selecionada, disparar evento
+            if (prioridadeSelect.value) {
+                prioridadeSelect.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Validação antes de enviar
+        document.getElementById('form-criar-os').addEventListener('submit', function(e) {
+            const categoria = document.getElementById('categoria').value;
+            const prioridade = document.getElementById('prioridade').value;
+            const prazo = document.getElementById('prazo_execucao').value;
+            const descricao = document.getElementById('descricao').value;
+            
+            if (!categoria || !prioridade || !prazo || !descricao.trim()) {
+                e.preventDefault();
+                alert('⚠️ Por favor, preencha todos os campos obrigatórios!');
+                return false;
+            }
+            
+            // Confirmar criação
+            if (!confirm('✅ Confirma a criação desta Ordem de Serviço?')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        console.log('📋 Formulário de criação de OS carregado');
+    </script>
+</body>
+</html>

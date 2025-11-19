@@ -1,0 +1,293 @@
+<!-- app/templates/dashboard/campo.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Campo{% endblock %}
+{% block page_title %}Campo — Minhas OS{% endblock %}
+
+{% block extra_css %}
+<style>
+  .campo-container { padding: 90px 24px 24px; }
+  .cards-grid {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-bottom: 16px;
+  }
+  .card {
+    background: #fff; border-radius: 12px; padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .card h3 { margin: 0 0 6px; font-size: 15px; color: #666; }
+  .card .value { font-size: 28px; font-weight: 700; color: #333; }
+  .card small { color: #999; }
+
+  .toolbar {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    margin: 10px 0 18px;
+  }
+  .toolbar .btn {
+    border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer;
+    background: #4CAF50; color: #fff; font-weight: 600;
+  }
+  .toolbar .btn.secondary { background: #1976d2; }
+  .toolbar .btn.light { background: #eeeeee; color: #333; }
+
+  .grid-2 {
+    display: grid; gap: 16px;
+    grid-template-columns: 1.2fr 1fr;
+  }
+  @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  #map-campo {
+    width: 100%; height: 62vh; border-radius: 12px; overflow: hidden;
+    border: 1px solid #e0e0e0;
+  }
+
+  .table-card table {
+    width: 100%; border-collapse: collapse;
+  }
+  .table-card th, .table-card td {
+    border-bottom: 1px solid #eee; padding: 12px; text-align: left;
+  }
+  .table-card th {
+    background: #f8f8f8; color: #555; font-weight: 700;
+  }
+  .badge {
+    padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;
+  }
+  .badge.alta { background: #ffebee; color: #c62828; }
+  .badge.media { background: #fff8e1; color: #ef6c00; }
+  .badge.baixa { background: #e8f5e9; color: #2e7d32; }
+  .status {
+    padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;
+  }
+  .status.aberta { background: #e3f2fd; color: #1565c0; }
+  .status.em_andamento { background: #fff3e0; color: #ef6c00; }
+  .status.concluida { background: #e8f5e9; color: #2e7d32; }
+
+  .actions .btn-sm {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: none; border-radius: 8px; padding: 8px 10px; cursor: pointer;
+    background: #f1f1f1; color: #333; margin-right: 6px;
+  }
+  .actions .btn-sm.start { background: #ffd54f; }
+  .actions .btn-sm.done { background: #81c784; color: #fff; }
+  .actions .btn-sm.view { background: #90caf9; color: #0d47a1; text-decoration: none; }
+  .hint { color: #7a7a7a; font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="campo-container">
+  <!-- Cards -->
+  <div class="cards-grid">
+    <div class="card">
+      <h3>Minhas OS — Hoje</h3>
+      <div class="value" id="kpiHoje">0</div>
+      <small>criadas nas últimas 24h</small>
+    </div>
+    <div class="card">
+      <h3>Em Andamento</h3>
+      <div class="value" id="kpiAndamento">0</div>
+      <small>executando agora</small>
+    </div>
+    <div class="card">
+      <h3>Pendentes</h3>
+      <div class="value" id="kpiPendentes">0</div>
+      <small>aguardando iniciar</small>
+    </div>
+    <div class="card">
+      <h3>Concluídas (30d)</h3>
+      <div class="value" id="kpiConcluidas">0</div>
+      <small>últimos 30 dias</small>
+    </div>
+  </div>
+
+  <!-- Ferramentas -->
+  <div class="toolbar">
+    <button class="btn" id="btnAtualizar"><i class="fas fa-sync"></i> Atualizar</button>
+    <button class="btn secondary" id="btnIniciarRota"><i class="fas fa-route"></i> Iniciar Rota</button>
+    <span class="hint"><i class="fas fa-info-circle"></i> Clique em um marcador no mapa para ver a OS.</span>
+  </div>
+
+  <div class="grid-2">
+    <!-- Mapa -->
+    <div class="card">
+      <h3 style="margin-top:0">Mapa de Trabalho</h3>
+      <div id="map-campo"></div>
+    </div>
+
+    <!-- Minhas OS -->
+    <div class="card table-card">
+      <h3 style="margin-top:0">Minhas OS</h3>
+      <div class="table-responsive">
+        <table id="tableMinhasOS">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Categoria</th>
+              <th>Prioridade</th>
+              <th>Status</th>
+              <th>Prazo</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Endpoints existentes no seu backend
+  const API_MINHAS = '/api/os?status=atribuida,em_andamento&limit=200';
+  //const API_MINHAS = '/api/os?status=criada,atribuida,em_andamento&limit=200';
+  const API_INICIAR = (id) => `/os/${id}/iniciar`;
+  const API_CONCLUIR = (id) => `/os/${id}/concluir`;
+
+  let map, markersLayer;
+
+  async function fetchMinhasOS() {
+    const res = await fetch(API_MINHAS, { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('Falha ao carregar OS');
+    const data = await res.json();
+    // Pode vir como array puro ou envelope {items,...}
+    return Array.isArray(data) ? data : (data.items || data.os || []);
+  }
+
+  function prioridadeBadge(pri) {
+    const p = (pri || '').toLowerCase();
+    if (p.includes('muito_alta') || p.includes('alta')) return '<span class="badge alta">Alta</span>';
+    if (p.includes('média') || p.includes('media')) return '<span class="badge media">Média</span>';
+    return '<span class="badge baixa">Baixa</span>';
+  }
+
+  function statusPill(st) {
+    const s = (st || '').toLowerCase();
+    if (s === 'em_andamento') return '<span class="status em_andamento">Em Andamento</span>';
+    if (s === 'concluida' || s === 'concluída') return '<span class="status concluida">Concluída</span>';
+    return '<span class="status aberta">Aberta</span>';
+  }
+
+  function renderTabela(items) {
+    const tbody = document.querySelector('#tableMinhasOS tbody');
+    if (!items || items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhuma OS encontrada.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(os => {
+      const prazo = os.prazo_execucao || os.prazo || os.prazo_previsto || '';
+      const cat = (os.categoria || '—').toString().replace(/_/g,' ').toUpperCase();
+      const detalhesHref = "{{ url_for('os.detalhes', id='__ID__') }}".replace('__ID__', os.id);
+      return `
+        <tr>
+          <td>${os.numero_os || os.id}</td>
+          <td>${cat}</td>
+          <td>${prioridadeBadge(os.prioridade)}</td>
+          <td>${statusPill(os.status)}</td>
+          <td>${prazo}</td>
+          <td class="actions">
+            ${os.status === 'em_andamento' ? '' : `<button class="btn-sm start" onclick="iniciarOS('${os.id}')"><i class="fas fa-play"></i> Iniciar</button>`}
+            ${os.status === 'concluida' ? '' : `<button class="btn-sm done" onclick="concluirOS('${os.id}')"><i class="fas fa-check"></i> Concluir</button>`}
+            <a class="btn-sm view" href="${detalhesHref}"><i class="fas fa-eye"></i> Ver</a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function initMap() {
+    map = L.map('map-campo').setView([-16.6869, -49.2648], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+  }
+
+  function renderMarcadores(items) {
+    markersLayer.clearLayers();
+    const bounds = [];
+    items.forEach(os => {
+      const lat = (typeof os.latitude === 'number') ? os.latitude : os.lat;
+      const lng = (typeof os.longitude === 'number') ? os.longitude : os.lng;
+      if (typeof lat !== 'number' || typeof lng !== 'number') return;
+
+      const cat = (os.categoria || '—').toString().replace(/_/g,' ').toUpperCase();
+      const detalhesHref = "{{ url_for('os.detalhes', id='__ID__') }}".replace('__ID__', os.id);
+
+      const marker = L.marker([lat, lng]).addTo(markersLayer);
+      marker.bindPopup(`
+        <strong>OS #${os.numero_os || os.id}</strong><br/>
+        <small>${cat} • ${os.prioridade || '—'} • ${os.status || '—'}</small><br/>
+        <small>${os.endereco || os.endereco_completo || ''}</small><br/><br/>
+        <button onclick="iniciarOS('${os.id}')" style="padding:6px 10px;border:none;border-radius:6px;background:#ffd54f;cursor:pointer"><i class="fas fa-play"></i> Iniciar</button>
+        <button onclick="concluirOS('${os.id}')" style="padding:6px 10px;border:none;border-radius:6px;background:#81c784;color:#fff;cursor:pointer;margin-left:6px"><i class="fas fa-check"></i> Concluir</button>
+        <a href="${detalhesHref}" style="padding:6px 10px;border:none;border-radius:6px;background:#90caf9;color:#0d47a1;text-decoration:none;margin-left:6px"><i class="fas fa-eye"></i> Ver</a>
+      `);
+      bounds.push([lat, lng]);
+    });
+    if (bounds.length) map.fitBounds(bounds, { padding: [24,24] });
+  }
+
+  async function iniciarOS(id) {
+    try {
+      const r = await fetch(API_INICIAR(id), { method: 'POST', credentials: 'same-origin' });
+      if (!r.ok) throw new Error('Falha ao iniciar OS');
+      await carregarTudo();
+    } catch (e) { console.error(e); alert('Erro ao iniciar OS'); }
+  }
+
+  async function concluirOS(id) {
+    try {
+      const r = await fetch(API_CONCLUIR(id), { method: 'POST', credentials: 'same-origin' });
+      if (!r.ok) throw new Error('Falha ao concluir OS');
+      await carregarTudo();
+    } catch (e) { console.error(e); alert('Erro ao concluir OS'); }
+  }
+
+  function renderKPIs(items) {
+    const hoje0 = new Date(); hoje0.setHours(0,0,0,0);
+    const kHoje = items.filter(os => {
+      if (!os.created_at) return false;
+      const d = new Date(os.created_at); d.setHours(0,0,0,0);
+      return d.getTime() === hoje0.getTime();
+    }).length;
+    const kAnd = items.filter(os => os.status === 'em_andamento').length;
+    const kPend = items.filter(os => (os.status === 'aberta' || os.status === 'pendente' || os.status === 'atribuida')).length;
+    const kConc = items.filter(os => os.status === 'concluida').length;
+
+    document.getElementById('kpiHoje').textContent = kHoje;
+    document.getElementById('kpiAndamento').textContent = kAnd;
+    document.getElementById('kpiPendentes').textContent = kPend;
+    document.getElementById('kpiConcluidas').textContent = kConc;
+  }
+
+  async function carregarTudo() {
+    try {
+      const items = await fetchMinhasOS();
+      renderKPIs(items);
+      renderTabela(items);
+      renderMarcadores(items);
+    } catch (e) {
+      console.error(e);
+      renderTabela([]);
+      renderMarcadores([]);
+    }
+  }
+
+  document.getElementById('btnAtualizar')?.addEventListener('click', carregarTudo);
+  document.getElementById('btnIniciarRota')?.addEventListener('click', () => {
+    alert('Roteirização simples: ordene suas OS por proximidade e siga o mapa. (Integre aqui seu otimizador quando quiser.)');
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    carregarTudo();
+    setInterval(carregarTudo, 180000); // 3 min
+  });
+</script>
+{% endblock %}

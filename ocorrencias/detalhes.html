@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da Ocorrência - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+    <style>
+        /* Estilos específicos para detalhes */
+        .details-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .detail-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .detail-card-header i {
+            font-size: 20px;
+            color: #3b82f6;
+        }
+
+        .detail-card-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .detail-image-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .detail-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .image-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .image-info-box {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .image-info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .image-info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .image-info-item i {
+            color: #3b82f6;
+            margin-top: 3px;
+            font-size: 16px;
+        }
+
+        .image-info-item .label {
+            font-weight: 600;
+            color: #475569;
+            min-width: 80px;
+        }
+
+        .image-info-item .value {
+            color: #334155;
+            flex: 1;
+        }
+
+        .detail-field {
+            margin-bottom: 24px;
+        }
+
+        .detail-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .detail-label i {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Categorias - usando a mesma paleta */
+        .badge-asfalto_dano,
+        .badge-buraco { 
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-calcada_dano { 
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .badge-iluminacao_publica,
+        .badge-iluminacao { 
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-fiacao_exposta,
+        .badge-fio_solto { 
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-lixo_irregular,
+        .badge-lixo { 
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .badge-arvore_dano,
+        .badge-poda_arvore { 
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-mato_alto { 
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-bueiro,
+        .badge-bueiro_entupido,
+        .badge-bueiro_dano { 
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-desconhecido { 
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        /* Urgências */
+        .badge-emergencia { 
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-urgente { 
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .badge-pouco_urgente { 
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-nao_urgente { 
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Status */
+        .badge-pendente { 
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-em_os { 
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-resolvida { 
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-cancelada { 
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .confidence-container {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .confidence-bar-wrapper {
+            position: relative;
+            height: 36px;
+            background: #e2e8f0;
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .confidence-bar-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 16px;
+        }
+
+        .confidence-bar-fill.high {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .confidence-bar-fill.medium {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .confidence-bar-fill.low {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        .confidence-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 15px;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        .btn i {
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-info {
+            background: #06b6d4;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #0891b2;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .map-container-detail {
+            height: 450px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+        }
+
+        .full-width-card {
+            grid-column: 1 / -1;
+        }
+
+        .description-text {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+            color: #334155;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .linked-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .linked-item:hover {
+            background: #f1f5f9;
+            border-color: #3b82f6;
+        }
+
+        .linked-item i {
+            font-size: 20px;
+            color: #3b82f6;
+        }
+
+        .linked-item-content {
+            flex: 1;
+        }
+
+        .linked-item-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .linked-item-subtitle {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        @media (max-width: 968px) {
+            .details-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animação de entrada */
+        .detail-card {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-card:nth-child(1) { animation-delay: 0s; }
+        .detail-card:nth-child(2) { animation-delay: 0.1s; }
+        .detail-card:nth-child(3) { animation-delay: 0.2s; }
+        .detail-card:nth-child(4) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link active">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Detalhes da Ocorrência</h1>
+                <p>Informações completas sobre a ocorrência registrada no sistema</p>
+            </div>
+            <div class="top-actions">
+                <a href="{{ url_for('ocorrencias.lista') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Grid de Detalhes -->
+            <div class="details-container">
+                <!-- Card de Imagem -->
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-image"></i>
+                        <h3>Registro Fotográfico</h3>
+                    </div>
+                    
+                    <div class="detail-image-wrapper">
+                        <img src="{{ url_for('static', filename=ocorrencia.imagem_path.replace('app/static/', '').replace('\\', '/')) }}" 
+                             alt="Ocorrência {{ ocorrencia.categoria }}" 
+                             class="detail-image"
+                             onerror="this.src='{{ url_for('static', filename='images/no-image.png') }}'">
+                        <div class="image-overlay">
+                            <i class="fas fa-camera"></i> 
+                            {{ ocorrencia.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+                    
+                    <div class="image-info-box">
+                        <div class="image-info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div>
+                                <div class="label">Coordenadas GPS</div>
+                                <div class="value">
+                                    {% if ocorrencia.latitude and ocorrencia.longitude %}
+                                        {{ "%.6f"|format(ocorrencia.latitude) }}, {{ "%.6f"|format(ocorrencia.longitude) }}
+                                    {% else %}
+                                        Não disponível
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="image-info-item">
+                            <i class="fas fa-location-dot"></i>
+                            <div>
+                                <div class="label">Endereço</div>
+                                <div class="value">{{ ocorrencia.endereco_completo or 'Endereço não disponível' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Informações -->
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h3>Informações da Ocorrência</h3>
+                    </div>
+                    
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-tag"></i>
+                            Categoria
+                        </div>
+                        <div class="detail-value">
+                            <span class="badge badge-{{ ocorrencia.categoria }}">
+                                {% if 'asfalto' in ocorrencia.categoria or 'buraco' in ocorrencia.categoria %}🕳️
+                                {% elif 'calcada' in ocorrencia.categoria %}🚶‍♀️
+                                {% elif 'iluminacao' in ocorrencia.categoria %}💡
+                                {% elif 'fiacao' in ocorrencia.categoria or 'fio' in ocorrencia.categoria %}⚡
+                                {% elif 'lixo' in ocorrencia.categoria %}🗑️
+                                {% elif 'arvore' in ocorrencia.categoria or 'poda' in ocorrencia.categoria %}🌳
+                                {% elif 'mato' in ocorrencia.categoria %}🌿
+                                {% elif 'onibus' in ocorrencia.categoria %}🚌
+                                {% elif 'vazamento' in ocorrencia.categoria %}💧
+                                {% elif 'bueiro' in ocorrencia.categoria %}🚰
+                                {% else %}📍
+                                {% endif %}
+                                {{ ocorrencia.categoria.replace('_', ' ').title() }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Nível de Urgência
+                        </div>
+                        <div class="detail-value">
+                            <span class="badge badge-{{ ocorrencia.urgencia }}">
+                                {% if ocorrencia.urgencia == 'emergencia' %}🚨 Emergência
+                                {% elif ocorrencia.urgencia == 'urgente' %}⚠️ Urgente
+                                {% elif ocorrencia.urgencia == 'pouco_urgente' %}⏰ Pouco Urgente
+                                {% elif ocorrencia.urgencia == 'nao_urgente' %}✅ Não Urgente
+                                {% else %}{{ ocorrencia.urgencia }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-check-circle"></i>
+                            Status Atual
+                        </div>
+                        <div class="detail-value">
+                            <span class="badge badge-{{ ocorrencia.status }}">
+                                {% if ocorrencia.status == 'pendente' %}🕐 Pendente
+                                {% elif ocorrencia.status == 'em_os' %}📋 Em Ordem de Serviço
+                                {% elif ocorrencia.status == 'resolvida' %}✅ Resolvida
+                                {% elif ocorrencia.status == 'cancelada' %}❌ Cancelada
+                                {% else %}{{ ocorrencia.status }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-robot"></i>
+                            Confiança da Análise IA
+                        </div>
+                        <div class="detail-value">
+                            <div class="confidence-container">
+                                <div class="confidence-bar-wrapper">
+                                    {% set confidence_pct = (ocorrencia.confidence_score * 100)|int %}
+                                    <div class="confidence-bar-fill {% if confidence_pct >= 80 %}high{% elif confidence_pct >= 60 %}medium{% else %}low{% endif %}" 
+                                         style="width: {{ confidence_pct }}%">
+                                    </div>
+                                    <span class="confidence-text">{{ confidence_pct }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-calendar"></i>
+                            Data de Registro
+                        </div>
+                        <div class="detail-value">
+                            {{ ocorrencia.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                        </div>
+                    </div>
+
+                    {% if ocorrencia.ordem_servico %}
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-clipboard-list"></i>
+                            Ordem de Serviço Vinculada
+                        </div>
+                        <div class="detail-value">
+                            <a href="{{ url_for('os.detalhes', id=ocorrencia.ordem_servico.id) }}" class="linked-item" style="text-decoration: none;">
+                                <i class="fas fa-clipboard-list"></i>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">OS #{{ ocorrencia.ordem_servico.numero_os }}</div>
+                                    <div class="linked-item-subtitle">Clique para ver detalhes</div>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: #94a3b8;"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if ocorrencia.camera_id %}
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-video"></i>
+                            Câmera de Origem
+                        </div>
+                        <div class="detail-value">
+                            <a href="{{ url_for('cameras.detalhes', id=ocorrencia.camera_id) }}" class="linked-item" style="text-decoration: none;">
+                                <i class="fas fa-camera"></i>
+                                <div class="linked-item-content">
+                                    <div class="linked-item-title">Câmera #{{ ocorrencia.camera_id }}</div>
+                                    <div class="linked-item-subtitle">Clique para ver detalhes</div>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: #94a3b8;"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Card de Descrição (largura completa) -->
+                <div class="detail-card full-width-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-file-alt"></i>
+                        <h3>Descrição da IA</h3>
+                    </div>
+                    <div class="description-text">
+                        {{ ocorrencia.descricao_ia or 'Nenhuma descrição foi gerada pela inteligência artificial para esta ocorrência.' }}
+                    </div>
+                </div>
+
+                <!-- Card de Ações (largura completa) -->
+                <div class="detail-card full-width-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-tools"></i>
+                        <h3>Ações Disponíveis</h3>
+                    </div>
+                    <div class="actions-grid">
+                        <a href="https://www.google.com/maps?q={{ ocorrencia.latitude }},{{ ocorrencia.longitude }}" 
+                           target="_blank" 
+                           class="btn btn-info">
+                            <i class="fas fa-map-marker-alt"></i> Ver no Google Maps
+                        </a>
+
+                        {% if current_user.is_gestor or current_user.is_admin %}
+                            {% if not ocorrencia.ordem_servico %}
+                            <a href="{{ url_for('os.criar') }}?ocorrencia_id={{ ocorrencia.id }}" class="btn btn-success">
+                                <i class="fas fa-plus-circle"></i> Criar Ordem de Serviço
+                            </a>
+                            {% endif %}
+
+                            <a href="{{ url_for('ocorrencias.editar', id=ocorrencia.id) }}" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> Editar Ocorrência
+                            </a>
+                            
+                            <form action="{{ url_for('ocorrencias.deletar', id=ocorrencia.id) }}" 
+                                  method="POST" 
+                                  style="display: contents;"
+                                  onsubmit="return confirm('⚠️ Tem certeza que deseja deletar esta ocorrência?\n\nEsta ação não pode ser desfeita!');">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Deletar Ocorrência
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Card do Mapa (largura completa) -->
+                <div class="detail-card full-width-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-map"></i>
+                        <h3>Localização no Mapa</h3>
+                    </div>
+                    <div class="map-container-detail" id="map-detalhes"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Inicializar mapa Leaflet
+        const latitude = {{ ocorrencia.latitude }};
+        const longitude = {{ ocorrencia.longitude }};
+
+        const map = L.map('map-detalhes').setView([latitude, longitude], 17);
+
+        // Adicionar camada do OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Ícone customizado baseado na categoria
+        const categoriaIcones = {
+            'asfalto_dano': '🕳️',
+            'buraco': '🕳️',
+            'bueiro': '🚰',
+            'bueiro_entupido': '🚰',
+            'bueiro_dano': '🚰',
+            'fio_solto': '⚡',
+            'fiacao_exposta': '⚡',
+            'mato_alto': '🌿',
+            'lixo': '🗑️',
+            'lixo_irregular': '🗑️',
+            'entulho': '🏗️',
+            'calcada_quebrada': '🚧',
+            'calcada_dano': '🚶‍♀️',
+            'iluminacao': '💡',
+            'iluminacao_publica': '💡',
+            'poda_arvore': '🌳',
+            'arvore_dano': '🌳',
+            'sinalizacao': '🚦',
+            'sinalizacao_apagada': '〰️',
+            'desconhecido': '❓'
+        };
+
+        const categoria = '{{ ocorrencia.categoria }}';
+        const icone = categoriaIcones[categoria] || '📍';
+
+        // Criar ícone customizado
+        const customIcon = L.divIcon({
+            html: `<div style="font-size: 36px; text-shadow: 2px 2px 8px rgba(0,0,0,0.3);">${icone}</div>`,
+            className: 'custom-marker',
+            iconSize: [40, 40],
+            iconAnchor: [20, 40]
+        });
+
+        // Adicionar marcador com popup
+        const marker = L.marker([latitude, longitude], { icon: customIcon }).addTo(map);
+
+        const popupContent = `
+            <div style="min-width: 250px; font-family: 'Poppins', sans-serif;">
+                <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px; font-weight: 600;">
+                    ${icone} {{ ocorrencia.categoria.replace('_', ' ').title() }}
+                </h4>
+                <p style="margin: 8px 0; font-size: 13px; color: #475569;">
+                    <strong>Urgência:</strong> {{ ocorrencia.urgencia.replace('_', ' ').title() }}
+                </p>
+                <p style="margin: 8px 0; font-size: 13px; color: #475569;">
+                    <strong>Status:</strong> {{ ocorrencia.status.replace('_', ' ').title() }}
+                </p>
+                <p style="margin: 8px 0; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+                    {{ ocorrencia.endereco_completo }}
+                </p>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent).openPopup();
+
+        // Adicionar círculo de área afetada (raio de 50m)
+        const circle = L.circle([latitude, longitude], {
+            color: '#ef4444',
+            fillColor: '#f59e0b',
+            fillOpacity: 0.15,
+            radius: 50,
+            weight: 2
+        }).addTo(map);
+    </script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+
+{% block title %}Mapa — Ordens de Serviço (Campo){% endblock %}
+{% block page_title %}Mapa de Trabalho (Campo){% endblock %}
+
+{% block extra_css %}
+<style>
+  .mc-wrap { padding: 90px 24px 24px; }
+  .mc-grid {
+    display: grid; gap: 16px;
+    grid-template-columns: 1.6fr 1fr;
+  }
+  @media (max-width: 1200px) { .mc-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: #fff; border-radius: 12px; padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  #map-campo-os {
+    width: 100%; height: 68vh; border-radius: 12px; overflow: hidden;
+    border: 1px solid #e0e0e0;
+  }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .toolbar select, .toolbar input, .toolbar button {
+    height: 38px; border-radius: 8px; border: 1px solid #ddd; padding: 0 10px;
+  }
+  .toolbar button {
+    background: #1976d2; color: #fff; border: none; cursor: pointer; font-weight: 600;
+  }
+  .toolbar .light { background: #eeeeee; color: #333; }
+
+  .legend {
+    display: flex; gap: 10px; flex-wrap: wrap; font-size: 13px; color: #555; margin-top: 8px;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .dot-and { background: #ff9800; }   /* em_andamento */
+  .dot-atr { background: #1565c0; }   /* atribuida */
+  .dot-con { background: #2e7d32; }   /* concluida */
+  .dot-abe { background: #6d4c41; }   /* aberta/pendente */
+
+  .table-card table { width: 100%; border-collapse: collapse; }
+  .table-card th, .table-card td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+  .table-card th { background: #f8f8f8; color: #555; font-weight: 700; }
+
+  .badge { padding: 3px 8px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+  .badge.alta { background: #ffebee; color: #c62828; }
+  .badge.media { background: #fff8e1; color: #ef6c00; }
+  .badge.baixa { background: #e8f5e9; color: #2e7d32; }
+
+  .pill { padding: 3px 8px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+  .pill.and { background: #fff3e0; color: #ef6c00; }
+  .pill.atr { background: #e3f2fd; color: #1565c0; }
+  .pill.con { background: #e8f5e9; color: #2e7d32; }
+  .pill.out { background: #efebe9; color: #5d4037; }
+
+  .actions .btn-sm {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: none; border-radius: 8px; padding: 7px 10px; cursor: pointer;
+    background: #f1f1f1; color: #333; margin-right: 6px; text-decoration: none;
+  }
+  .actions .btn-sm.start { background: #ffd54f; }
+  .actions .btn-sm.done { background: #81c784; color: #fff; }
+  .actions .btn-sm.view { background: #90caf9; color: #0d47a1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mc-wrap">
+  <div class="toolbar card">
+    <select id="fStatus" multiple title="Status (segure Ctrl para múltiplos)">
+      <option value="atribuida" selected>Atribuída</option>
+      <option value="em_andamento" selected>Em Andamento</option>
+      <option value="aberta">Aberta</option>
+      <option value="pendente">Pendente</option>
+      <option value="aguardando_aprovacao">Aguardando Aprovação</option>
+      <option value="concluida">Concluída</option>
+    </select>
+
+    <select id="fPrioridade" title="Prioridade">
+      <option value="">Todas as prioridades</option>
+      <option value="muito_alta">Muito Alta</option>
+      <option value="alta">Alta</option>
+      <option value="media">Média</option>
+      <option value="baixa">Baixa</option>
+    </select>
+
+    <input id="fBusca" type="text" placeholder="Buscar por endereço/categoria…"/>
+
+    <button id="btnAplicar"><i class="fas fa-filter"></i> Aplicar</button>
+    <button id="btnLimpar" class="light"><i class="fas fa-times"></i> Limpar</button>
+  </div>
+
+  <div class="mc-grid">
+    <!-- Mapa -->
+    <div class="card">
+      <div id="map-campo-os"></div>
+      <div class="legend">
+        <span><span class="dot dot-atr"></span> Atribuída</span>
+        <span><span class="dot dot-and"></span> Em Andamento</span>
+        <span><span class="dot dot-con"></span> Concluída</span>
+        <span><span class="dot dot-abe"></span> Aberta/Pendente</span>
+      </div>
+    </div>
+
+    <!-- Lista lateral -->
+    <div class="card table-card">
+      <h3 style="margin-top:0">OS no Mapa</h3>
+      <div class="table-responsive">
+        <table id="tableOS">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Categoria</th>
+              <th>Prioridade</th>
+              <th>Status</th>
+              <th>Prazo</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="6">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Endpoints existentes
+  const API_BASE = '/api/os';
+  const API_INICIAR = (id) => `/os/${id}/iniciar`;
+  const API_CONCLUIR = (id) => `/os/${id}/concluir`;
+
+  let map, markersLayer;
+
+  // Helpers UI
+  function prioridadeBadge(pri) {
+    const p = (pri || '').toLowerCase();
+    if (p.includes('muito_alta') || p.includes('alta')) return '<span class="badge alta">Alta</span>';
+    if (p.includes('média') || p.includes('media')) return '<span class="badge media">Média</span>';
+    return '<span class="badge baixa">Baixa</span>';
+  }
+  function statusPill(st) {
+    const s = (st || '').toLowerCase();
+    if (s === 'em_andamento') return '<span class="pill and">Em Andamento</span>';
+    if (s === 'atribuida') return '<span class="pill atr">Atribuída</span>';
+    if (s === 'concluida' || s === 'concluída') return '<span class="pill con">Concluída</span>';
+    return '<span class="pill out">' + (st || 'Aberta') + '</span>';
+  }
+
+  // Map init
+  function initMap() {
+    map = L.map('map-campo-os').setView([-16.6869, -49.2648], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+  }
+
+  function corPorStatus(s) {
+    const st = (s||'').toLowerCase();
+    if (st === 'em_andamento') return '#ff9800';
+    if (st === 'atribuida') return '#1565c0';
+    if (st === 'concluida') return '#2e7d32';
+    return '#6d4c41';
+  }
+
+  function iconeCirculo(color) {
+    return L.divIcon({
+      html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid rgba(0,0,0,.15)"></div>`,
+      className: '', iconSize: [14,14]
+    });
+  }
+
+  function renderMarcadores(items) {
+    markersLayer.clearLayers();
+    const bounds = [];
+    items.forEach(os => {
+      const lat = (typeof os.latitude === 'number') ? os.latitude : os.lat;
+      const lng = (typeof os.longitude === 'number') ? os.longitude : os.lng;
+      if (typeof lat !== 'number' || typeof lng !== 'number') return;
+
+      const cat = (os.categoria || '—').toString().replace(/_/g,' ').toUpperCase();
+      const detalhesHref = "{{ url_for('os.detalhes', id='__ID__') }}".replace('__ID__', os.id);
+      const color = corPorStatus(os.status);
+
+      const m = L.marker([lat, lng], { icon: iconeCirculo(color) }).addTo(markersLayer);
+      m.bindPopup(`
+        <strong>OS #${os.numero_os || os.id}</strong><br/>
+        <small>${cat} • ${os.prioridade || '—'} • ${os.status || '—'}</small><br/>
+        <small>${os.endereco || os.endereco_completo || ''}</small><br/><br/>
+        <form method="post" action="${API_INICIAR(os.id)}" style="display:inline;">
+          <button type="submit" style="padding:6px 10px;border:none;border-radius:6px;background:#ffd54f;cursor:pointer">
+            <i class="fas fa-play"></i> Iniciar
+          </button>
+        </form>
+        <form method="post" action="${API_CONCLUIR(os.id)}" style="display:inline;margin-left:6px;">
+          <button type="submit" style="padding:6px 10px;border:none;border-radius:6px;background:#81c784;color:#fff;cursor:pointer">
+            <i class="fas fa-check"></i> Concluir
+          </button>
+        </form>
+        <a href="${detalhesHref}" style="padding:6px 10px;border:none;border-radius:6px;background:#90caf9;color:#0d47a1;text-decoration:none;margin-left:6px">
+          <i class="fas fa-eye"></i> Ver
+        </a>
+      `);
+      bounds.push([lat, lng]);
+    });
+    if (bounds.length) map.fitBounds(bounds, { padding: [24,24] });
+  }
+
+  function renderTabela(items) {
+    const tbody = document.querySelector('#tableOS tbody');
+    if (!items || items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhuma OS encontrada.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(os => {
+      const prazo = os.prazo_execucao || os.prazo || os.prazo_previsto || '';
+      const cat = (os.categoria || '—').toString().replace(/_/g,' ').toUpperCase();
+      const detalhesHref = "{{ url_for('os.detalhes', id='__ID__') }}".replace('__ID__', os.id);
+      return `
+        <tr>
+          <td>${os.numero_os || os.id}</td>
+          <td>${cat}</td>
+          <td>${prioridadeBadge(os.prioridade)}</td>
+          <td>${statusPill(os.status)}</td>
+          <td>${prazo}</td>
+          <td class="actions">
+            ${os.status === 'em_andamento' ? '' : `
+              <form method="post" action="${API_INICIAR(os.id)}" style="display:inline;">
+                <button class="btn-sm start" type="submit"><i class="fas fa-play"></i> Iniciar</button>
+              </form>`}
+            ${os.status === 'concluida' ? '' : `
+              <form method="post" action="${API_CONCLUIR(os.id)}" style="display:inline;">
+                <button class="btn-sm done" type="submit"><i class="fas fa-check"></i> Concluir</button>
+              </form>`}
+            <a class="btn-sm view" href="${detalhesHref}"><i class="fas fa-eye"></i> Ver</a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function buildQuery() {
+    const statuses = Array.from(document.getElementById('fStatus').selectedOptions).map(o => o.value);
+    const prio = document.getElementById('fPrioridade').value || '';
+    const busca = document.getElementById('fBusca').value || '';
+    const params = new URLSearchParams();
+    if (statuses.length) params.set('status', statuses.join(','));
+    if (prio) params.set('prioridade', prio);
+    if (busca) params.set('q', busca);
+    params.set('limit', '500');
+    return params.toString();
+  }
+
+  async function fetchOS() {
+    const qs = buildQuery();
+    const url = `${API_BASE}?${qs}`;
+    const res = await fetch(url, { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('Falha ao buscar OS');
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.items || data.os || []);
+  }
+
+  async function carregar() {
+    try {
+      const items = await fetchOS();
+      renderMarcadores(items);
+      renderTabela(items);
+    } catch (e) {
+      console.error(e);
+      renderMarcadores([]);
+      renderTabela([]);
+    }
+  }
+
+  // Eventos UI
+  document.getElementById('btnAplicar')?.addEventListener('click', carregar);
+  document.getElementById('btnLimpar')?.addEventListener('click', () => {
+    // reset filtros
+    const sel = document.getElementById('fStatus');
+    for (const opt of sel.options) opt.selected = false;
+    sel.querySelector('option[value="atribuida"]').selected = true;
+    sel.querySelector('option[value="em_andamento"]').selected = true;
+    document.getElementById('fPrioridade').value = '';
+    document.getElementById('fBusca').value = '';
+    carregar();
+  });
+
+  // Init
+  document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    carregar();
+    // auto-refresh a cada 3 minutos
+    setInterval(carregar, 180000);
+  });
+</script>
+{% endblock %}

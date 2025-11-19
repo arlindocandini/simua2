@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Ocorrências Urbanas{% endblock %}</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Leaflet (Mapas) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- CSS Principal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+        <!-- Sidebar (apenas para usuários logados) -->
+        {% include 'components/sidebar.html' %}
+        
+        <!-- Header com notificações -->
+        {% include 'components/header.html' %}
+    {% endif %}
+    
+    <!-- Conteúdo Principal -->
+    <div class="{% if current_user.is_authenticated %}main-content{% else %}full-width{% endif %}">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible">
+                            <button type="button" class="close" onclick="this.parentElement.remove()">
+                                <span>&times;</span>
+                            </button>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Conteúdo da Página -->
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- Modals Globais -->
+    {% block modals %}{% endblock %}
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    
+    <!-- Script Principal -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% if current_user.is_authenticated %}
+        <!-- WebSocket para tempo real -->
+        <script src="{{ url_for('static', filename='js/websocket.js') }}"></script>
+    {% endif %}
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

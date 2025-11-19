@@ -1,0 +1,515 @@
+/* ========================================
+   RANKING E DETALHES - REDESIGN COMPLETO
+   ======================================== */
+
+/* ========================================
+   RANKING CARDS
+   ======================================== */
+
+.ranking-item {
+    padding: 20px 18px;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    position: relative;
+}
+
+.ranking-item:hover {
+    background: #f8fafc;
+    border-left-color: #4338ca;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.ranking-item.active {
+    background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+    border-left-color: #4338ca;
+    box-shadow: 0 3px 12px rgba(67, 56, 202, 0.15);
+}
+
+/* Header do Ranking Item */
+.ranking-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.ranking-item-location {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.4;
+    margin-bottom: 6px;
+}
+
+.ranking-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #64748b;
+    flex-wrap: wrap;
+}
+
+.ranking-item-meta i {
+    color: #94a3b8;
+}
+
+.ranking-item-separator {
+    color: #cbd5e1;
+    font-weight: 700;
+}
+
+/* Badge de Risco */
+.risk-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+}
+
+.risk-badge.medio {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    border: 1px solid #fbbf24;
+}
+
+.risk-badge.alto {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+    border: 1px solid #f87171;
+}
+
+.risk-badge.extremo {
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    color: #5b21b6;
+    border: 1px solid #a78bfa;
+}
+
+.risk-badge.baixo {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    border: 1px solid #34d399;
+}
+
+/* Score do Ranking */
+.ranking-score {
+    font-size: 24px;
+    font-weight: 800;
+    color: #f59e0b;
+    text-align: right;
+    line-height: 1;
+}
+
+/* ========================================
+   PAINEL DE DETALHES
+   ======================================== */
+
+.detail-panel {
+    padding: 24px;
+    background: white;
+    border-radius: 16px;
+}
+
+/* Header do Detalhe */
+.detail-header {
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+}
+
+.detail-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.detail-title i {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(67, 56, 202, 0.1), rgba(99, 102, 241, 0.1));
+    border-radius: 8px;
+    color: #4338ca;
+}
+
+.detail-subtitle {
+    font-size: 17px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.4;
+}
+
+.detail-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 6px;
+}
+
+.detail-location i {
+    color: #4338ca;
+}
+
+/* Section do Detalhe */
+.detail-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.detail-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.detail-id {
+    font-size: 13px;
+    color: #475569;
+    font-family: 'Courier New', monospace;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+/* IRL Score Grande */
+.irl-score-large {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 12px;
+    border: 2px solid #fbbf24;
+    margin: 16px 0;
+}
+
+.irl-score-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #78350f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.irl-score-value {
+    font-size: 48px;
+    font-weight: 800;
+    color: #92400e;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.irl-score-level {
+    font-size: 14px;
+    font-weight: 600;
+    color: #92400e;
+}
+
+/* Info Rows */
+.detail-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-info-row:last-child {
+    border-bottom: none;
+}
+
+.detail-info-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.detail-info-value {
+    font-size: 14px;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Fontes de Risco */
+.risk-sources {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.risk-source-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.risk-source-item:last-child {
+    border-bottom: none;
+}
+
+.risk-source-label {
+    font-size: 13px;
+    color: #475569;
+}
+
+.risk-source-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Análise SIMUA */
+.simua-analysis {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
+    border: 2px solid #93c5fd;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.simua-analysis-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.simua-analysis-icon {
+    width: 28px;
+    height: 28px;
+    background: #4338ca;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+}
+
+.simua-analysis-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.simua-analysis-content {
+    font-size: 13px;
+    color: #1e40af;
+    line-height: 1.6;
+}
+
+/* Custos */
+.cost-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.cost-item {
+    background: white;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.cost-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+}
+
+.cost-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #10b981;
+}
+
+.cost-value.danger {
+    color: #ef4444;
+}
+
+/* Relação Custo/Benefício */
+.cost-benefit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 2px solid #fbbf24;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 12px;
+}
+
+.cost-benefit-label {
+    font-size: 12px;
+    color: #78350f;
+    font-weight: 600;
+}
+
+.cost-benefit-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: #92400e;
+}
+
+/* Simulação de Cenário */
+.simulation-section {
+    background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+    border: 2px solid #c084fc;
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 20px;
+}
+
+.simulation-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.simulation-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+
+.simulation-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #6b21a8;
+}
+
+.simulation-action {
+    background: white;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #ddd6fe;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #5b21b6;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.simulation-action:hover {
+    background: #faf5ff;
+    border-color: #c084fc;
+    transform: translateY(-1px);
+}
+
+.simulation-action i {
+    color: #8b5cf6;
+}
+
+/* ========================================
+   PERCENTUAL BADGE
+   ======================================== */
+
+.percentage-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    border: 2px solid #f87171;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #991b1b;
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .cost-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .irl-score-value {
+        font-size: 36px;
+    }
+    
+    .ranking-item {
+        padding: 16px 14px;
+    }
+    
+    .detail-panel {
+        padding: 18px;
+    }
+}
+
+/* ========================================
+   ANIMAÇÕES
+   ======================================== */
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.detail-panel {
+    animation: slideInRight 0.3s ease-out;
+}
+
+.ranking-item {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.ranking-item:nth-child(1) { animation-delay: 0.05s; }
+.ranking-item:nth-child(2) { animation-delay: 0.1s; }
+.ranking-item:nth-child(3) { animation-delay: 0.15s; }
+.ranking-item:nth-child(4) { animation-delay: 0.2s; }
+.ranking-item:nth-child(5) { animation-delay: 0.25s; }

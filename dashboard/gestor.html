@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link active">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                        <span class="badge-nav" id="badgeOcorrencias">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.irl') }}" class="nav-link">
+                        <i class="fas fa-scale-balanced"></i>
+                        <span>Risco Legal (IRL)</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Ocorrências Urbanas</h1>
+                <p>Gestão e monitoramento de ocorrências da cidade</p>
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-primary" onclick="window.location.href='{{ url_for('ocorrencias.upload') }}'">
+                    <i class="fas fa-plus"></i> Nova Ocorrência
+                </button>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label>Período</label>
+                        <select id="filterPeriodo">
+                            <option value="7">Últimos 7 dias</option>
+                            <option value="30" selected>Últimos 30 dias</option>
+                            <option value="90">Últimos 90 dias</option>
+                            <option value="ano">Este ano</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Tipo de Ocorrência</label>
+                            <select id="filterTipo">
+                                <option value="">Todos os Tipos</option>
+
+                                <option value="asfalto_dano">🕳️ Buraco / Asfalto Danificado</option>
+                                <option value="calcada_dano">🚶‍♀️ Calçada Danificada</option>
+                                <option value="iluminacao_publica">💡 Iluminação Pública</option>
+                                <option value="fiacao_exposta">⚡ Fiação Exposta</option>
+                                <option value="lixo_irregular">🗑️ Lixo / Entulho Irregular</option>
+                                <option value="arvore_dano">🌳 Árvore / Galhos Danificados</option>
+                                <option value="mato_alto">🌿 Mato Alto</option>
+                                <option value="ponto_onibus_dano">🚌 Ponto de Ônibus Danificado</option>
+                                <option value="vazamento_agua">💧 Vazamento de Água</option>
+                                <option value="fruta_na_pista">🍂 Frutas / Resíduos na Pista</option>
+                                <option value="placa_dano">🚧 Placa de Trânsito Danificada</option>
+                                <option value="semaforo_defeito">🚦 Semáforo com Defeito</option>
+                                <option value="sinalizacao_apagada">〰️ Sinalização Apagada</option>
+                                <option value="objeto_na_pista">🧱 Objeto / Obstrução na Pista</option>
+                                <option value="animal_na_pista">🐕 Animal na Pista</option>
+                                <option value="bueiro_entupido">🕳️ Bueiro Entupido</option>
+                                <option value="bueiro_dano">🕳️ Bueiro Danificado</option>
+                                <option value="queimada">🔥 Queimada / Foco de Incêndio</option>
+                                <option value="obra_irregular">🏗️ Obra Irregular</option>
+                                <option value="desconhecido">❓ Desconhecido</option>
+                            </select>
+
+                    </div>
+                    <div class="filter-group">
+                        <label>Prioridade</label>
+                        <select id="filterPrioridade">
+                            <option value="">Todas as Prioridades</option>
+                            <option value="emergencia">Crítica</option>
+                            <option value="urgente">Alta</option>
+                            <option value="pouco_urgente">Média</option>
+                            <option value="nao_urgente">Baixa</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Status</label>
+                        <select id="filterStatus">
+                            <option value="">Todos os Status</option>
+                            <option value="pendente">Nova</option>
+                            <option value="validada">Em Análise</option>
+                            <option value="aprovada">Validada</option>
+                            <option value="resolvida">Resolvida</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Região</label>
+                        <select id="filterRegiao">
+                            <option value="">Todas as Regiões</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-secondary" onclick="limparFiltros()">
+                        <i class="fas fa-redo"></i> Limpar
+                    </button>
+                    <button class="btn btn-primary" onclick="aplicarFiltros()">
+                        <i class="fas fa-search"></i> Aplicar Filtros
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon primary">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="stat-trend up" id="trendTotal">
+                            <i class="fas fa-arrow-up"></i> 0%
+                        </div>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total de Ocorrências</h3>
+                        <div class="stat-value" id="statTotal">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card danger">
+                    <div class="stat-header">
+                        <div class="stat-icon danger">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="stat-trend down" id="trendCriticas">
+                            <i class="fas fa-arrow-down"></i> 0%
+                        </div>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Críticas (Urgente)</h3>
+                        <div class="stat-value" id="statCriticas">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-header">
+                        <div class="stat-icon warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-trend up" id="trendAguardando">
+                            <i class="fas fa-arrow-up"></i> 0%
+                        </div>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Aguardando Validação</h3>
+                        <div class="stat-value" id="statAguardando">0</div>
+                    </div>
+                </div>
+
+                <div class="stat-card success">
+                    <div class="stat-header">
+                        <div class="stat-icon success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-trend up" id="trendResolvidas">
+                            <i class="fas fa-arrow-up"></i> 0%
+                        </div>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Resolvidas (30 dias)</h3>
+                        <div class="stat-value" id="statResolvidas">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-map-marked-alt"></i> Mapa de Ocorrências
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="map-container">
+                                <div id="map"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-list"></i> Ocorrências Recentes
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Tipo</th>
+                                        <th>Localização</th>
+                                        <th>Prioridade</th>
+                                        <th>Status</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableRecentes">
+                                    <tr>
+                                        <td colspan="6" class="text-center">Carregando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-chart-pie"></i> Por Tipo
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 280px;">
+                                <canvas id="typeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-exclamation-triangle"></i> Por Prioridade
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 280px;">
+                                <canvas id="priorityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="fas fa-chart-line"></i> Evolução (7 dias)
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="height: 250px;">
+                                <canvas id="evolutionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard_modern.js') }}"></script>
+</body>
+</html>

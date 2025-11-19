@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+    <style>
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+        }
+
+        .stat-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .stat-icon.primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .stat-icon.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .stat-icon.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .stat-icon.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .stat-content h4 {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0 0 8px 0;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-content .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1;
+        }
+
+        /* Seções */
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .section-title i {
+            font-size: 20px;
+            color: #3b82f6;
+        }
+
+        /* Ações rápidas */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .action-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .action-card:hover {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .action-card-icon {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .action-card-title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 16px;
+        }
+
+        .action-card-description {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        /* Lista de relatórios */
+        .reports-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .report-item {
+            background: #f8fafc;
+            padding: 16px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .report-item:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+
+        .report-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .report-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            font-size: 18px;
+        }
+
+        .report-details h5 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 4px 0;
+        }
+
+        .report-details p {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .report-details p i {
+            font-size: 11px;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .action-btn-small.download {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .action-btn-small.download:hover {
+            background: #bfdbfe;
+        }
+
+        .action-btn-small.delete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-btn-small.delete:hover {
+            background: #fecaca;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #475569;
+            margin: 0 0 8px 0;
+        }
+
+        .empty-state p {
+            color: #64748b;
+            margin: 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        /* Grid de 2 colunas */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 968px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animações */
+        .stat-card,
+        .section-card {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0s; }
+        .stat-card:nth-child(2) { animation-delay: 0.1s; }
+        .stat-card:nth-child(3) { animation-delay: 0.2s; }
+        .stat-card:nth-child(4) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link active">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Relatórios e Análises</h1>
+                <p>Visualize estatísticas e gere relatórios do sistema</p>
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-primary" onclick="alert('Funcionalidade de exportação em desenvolvimento')">
+                    <i class="fas fa-download"></i> Exportar Dados
+                </button>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- Stats Rápidas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Ocorrências Hoje</h4>
+                        <div class="value">{{ stats.ocorrencias_hoje if stats else 0 }}</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h4>Ocorrências no Mês</h4>
+                        <div class="value">{{ stats.ocorrencias_mes if stats else 0 }}</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h4>OS Pendentes</h4>
+                        <div class="value">{{ stats.os_pendentes if stats else 0 }}</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon danger">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h4>OS no Mês</h4>
+                        <div class="value">{{ stats.os_mes if stats else 0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid de Conteúdo -->
+            <div class="content-grid">
+                <!-- Coluna Esquerda: Ações Rápidas -->
+                <div>
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <i class="fas fa-bolt"></i>
+                                Ações Rápidas
+                            </div>
+                        </div>
+
+                        <div class="quick-actions">
+                            <a href="#" class="action-card" onclick="alert('Gerando relatório de ocorrências...'); return false;">
+                                <div class="action-card-icon">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                                <div class="action-card-title">Relatório de Ocorrências</div>
+                                <div class="action-card-description">
+                                    Gere um relatório completo de todas as ocorrências registradas no sistema
+                                </div>
+                            </a>
+
+                            <a href="#" class="action-card" onclick="alert('Gerando relatório de OS...'); return false;">
+                                <div class="action-card-icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                <div class="action-card-title">Relatório de OS</div>
+                                <div class="action-card-description">
+                                    Visualize o status e desempenho das ordens de serviço
+                                </div>
+                            </a>
+
+                            <a href="#" class="action-card" onclick="alert('Gerando relatório de equipes...'); return false;">
+                                <div class="action-card-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="action-card-title">Desempenho de Equipes</div>
+                                <div class="action-card-description">
+                                    Analise a produtividade e eficiência das equipes
+                                </div>
+                            </a>
+
+                            <a href="#" class="action-card" onclick="alert('Gerando relatório geográfico...'); return false;">
+                                <div class="action-card-icon">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                </div>
+                                <div class="action-card-title">Análise Geográfica</div>
+                                <div class="action-card-description">
+                                    Mapa de calor com regiões críticas e tendências
+                                </div>
+                            </a>
+
+                            <a href="#" class="action-card" onclick="alert('Gerando relatório de câmeras...'); return false;">
+                                <div class="action-card-icon">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <div class="action-card-title">Relatório de Câmeras</div>
+                                <div class="action-card-description">
+                                    Estatísticas de capturas e eficiência das câmeras
+                                </div>
+                            </a>
+
+                            <a href="#" class="action-card" onclick="alert('Gerando relatório customizado...'); return false;">
+                                <div class="action-card-icon">
+                                    <i class="fas fa-sliders-h"></i>
+                                </div>
+                                <div class="action-card-title">Relatório Customizado</div>
+                                <div class="action-card-description">
+                                    Crie um relatório personalizado com filtros específicos
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Histórico de Relatórios -->
+                <div>
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div class="section-title">
+                                <i class="fas fa-history"></i>
+                                Relatórios Salvos
+                            </div>
+                        </div>
+
+                        <div class="reports-list">
+                            {% if relatorios_salvos and relatorios_salvos|length > 0 %}
+                                {% for r in relatorios_salvos %}
+                                <div class="report-item">
+                                    <div class="report-info">
+                                        <div class="report-icon">
+                                            <i class="fas fa-file-alt"></i>
+                                        </div>
+                                        <div class="report-details">
+                                            <h5>{{ r.titulo }}</h5>
+                                            <p>
+                                                <i class="fas fa-calendar"></i>
+                                                {{ r.created_at|datetime('%d/%m/%Y às %H:%M') }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="report-actions">
+                                        <button class="action-btn-small download" title="Baixar Relatório" onclick="alert('Download do relatório: {{ r.titulo }}')">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="action-btn-small delete" title="Excluir Relatório" onclick="if(confirm('Deseja excluir este relatório?')) alert('Relatório excluído')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-file-alt"></i>
+                                    <h3>Nenhum relatório salvo</h3>
+                                    <p>Gere seu primeiro relatório usando as ações rápidas</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('📊 Página de Relatórios carregada');
+    </script>
+</body>
+</html>

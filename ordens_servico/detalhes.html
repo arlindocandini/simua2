@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da OS - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+    <style>
+        /* Estilos específicos para detalhes de OS */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .detail-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .detail-card-header i {
+            font-size: 20px;
+            color: #3b82f6;
+        }
+
+        .detail-card-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .detail-field {
+            margin-bottom: 20px;
+        }
+
+        .detail-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-label i {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .detail-value {
+            font-size: 15px;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Status badges */
+        .status-criada,
+        .status-pendente,
+        .status-aberta {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-atribuida {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-em_andamento,
+        .status-em_progresso {
+            background: #bfdbfe;
+            color: #1e3a8a;
+        }
+
+        .status-aguardando_aprovacao {
+            background: #e9d5ff;
+            color: #6b21a8;
+        }
+
+        .status-aprovada,
+        .status-concluida,
+        .status-finalizada {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-rejeitada,
+        .status-cancelada {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-pausada {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Prioridade badges */
+        .priority-alta,
+        .priority-urgente {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .priority-media,
+        .priority-normal {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .priority-baixa {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Timeline */
+        .timeline-container {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 19px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #3b82f6, #93c5fd);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -29px;
+            top: 20px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 4px solid #3b82f6;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .timeline-status {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+
+        .timeline-comment {
+            color: #475569;
+            font-size: 14px;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .timeline-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .timeline-meta i {
+            color: #94a3b8;
+        }
+
+        /* Imagens */
+        .photo-section {
+            margin-top: 24px;
+        }
+
+        .photo-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .photo-title i {
+            color: #3b82f6;
+        }
+
+        .photo-wrapper {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 2px solid #e2e8f0;
+        }
+
+        .photo-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .no-photo {
+            padding: 40px;
+            text-align: center;
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            color: #94a3b8;
+        }
+
+        .no-photo i {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        /* Info box */
+        .info-box {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-box-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .info-box-value {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        /* Botões de ação */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        .btn i {
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .full-width-card {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 968px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animação de entrada */
+        .detail-card {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-card:nth-child(1) { animation-delay: 0s; }
+        .detail-card:nth-child(2) { animation-delay: 0.1s; }
+        .detail-card:nth-child(3) { animation-delay: 0.2s; }
+        .detail-card:nth-child(4) { animation-delay: 0.3s; }
+
+        /* OS number highlight */
+        .os-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #3b82f6;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .os-number i {
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link active">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <div class="os-number">
+                    <i class="fas fa-clipboard-list"></i>
+                    OS #{{ os.numero_os }}
+                </div>
+                <p>Detalhes completos da ordem de serviço</p>
+            </div>
+            <div class="top-actions">
+                <a href="{{ url_for('os.lista') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="details-grid">
+                <!-- Card de Informações Gerais -->
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h3>Informações Gerais</h3>
+                    </div>
+
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-flag"></i>
+                            Status
+                        </div>
+                        <div class="detail-value">
+                            <span class="badge status-{{ os.status }}">
+                                {% if os.status == 'criada' or os.status == 'pendente' %}🕐 Pendente
+                                {% elif os.status == 'aberta' %}📂 Aberta
+                                {% elif os.status == 'atribuida' %}👥 Atribuída
+                                {% elif os.status == 'em_andamento' or os.status == 'em_progresso' %}🔄 Em Andamento
+                                {% elif os.status == 'aguardando_aprovacao' %}⏳ Aguardando Aprovação
+                                {% elif os.status == 'aprovada' or os.status == 'concluida' %}✅ Aprovada
+                                {% elif os.status == 'rejeitada' %}❌ Rejeitada
+                                {% elif os.status == 'cancelada' %}🚫 Cancelada
+                                {% else %}{{ os.status.replace('_', ' ').title() }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-tag"></i>
+                            Categoria
+                        </div>
+                        <div class="detail-value">
+                            {{ os.categoria.replace('_', ' ').title() }}
+                        </div>
+                    </div>
+
+                    {% if os.prioridade %}
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Prioridade
+                        </div>
+                        <div class="detail-value">
+                            <span class="badge priority-{{ os.prioridade }}">
+                                {% if os.prioridade == 'alta' or os.prioridade == 'urgente' %}🔴 Alta
+                                {% elif os.prioridade == 'media' or os.prioridade == 'normal' %}🟡 Média
+                                {% elif os.prioridade == 'baixa' %}🟢 Baixa
+                                {% else %}{{ os.prioridade.title() }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-file-alt"></i>
+                            Descrição
+                        </div>
+                        <div class="detail-value">
+                            {{ os.descricao or 'Sem descrição' }}
+                        </div>
+                    </div>
+
+                    {% if os.observacoes_criacao %}
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-comment-alt"></i>
+                            Observações
+                        </div>
+                        <div class="detail-value">
+                            {{ os.observacoes_criacao }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if os.prazo_execucao %}
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-calendar-alt"></i>
+                            Prazo de Execução
+                        </div>
+                        <div class="detail-value">
+                            {{ os.prazo_execucao.strftime('%d/%m/%Y') }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-user-tie"></i>
+                            Gestor Criador
+                        </div>
+                        <div class="detail-value">
+                            {{ os.gestor_criador.nome_completo if os.gestor_criador else 'Não informado' }}
+                        </div>
+                    </div>
+
+                    {% if os.responsavel_campo %}
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-user-hard-hat"></i>
+                            Responsável em Campo
+                        </div>
+                        <div class="detail-value">
+                            {{ os.responsavel_campo.nome_completo }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if os.equipe %}
+                    <div class="detail-field">
+                        <div class="detail-label">
+                            <i class="fas fa-users"></i>
+                            Equipe
+                        </div>
+                        <div class="detail-value">
+                            {{ os.equipe.nome }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Card de Localização -->
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <h3>Localização</h3>
+                    </div>
+
+                    <div class="info-box" style="margin-bottom: 20px;">
+                        <div class="info-box-label">Endereço</div>
+                        <div class="info-box-value">
+                            {{ os.endereco_completo or 'Não informado' }}
+                        </div>
+                    </div>
+
+                    {% if os.latitude and os.longitude %}
+                    <div class="info-box">
+                        <div class="info-box-label">Coordenadas GPS</div>
+                        <div class="info-box-value" style="font-family: monospace;">
+                            {{ "%.6f"|format(os.latitude) }}, {{ "%.6f"|format(os.longitude) }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Fotos -->
+                    {% if os.foto_antes_url %}
+                    <div class="photo-section">
+                        <div class="photo-title">
+                            <i class="fas fa-camera"></i>
+                            Foto Antes
+                        </div>
+                        <div class="photo-wrapper">
+                            <img src="{{ url_for('static', filename=os.foto_antes_url.replace('app/static/', '').replace('\\', '/')) }}" 
+                                 alt="Foto antes da execução"
+                                 onerror="this.parentElement.innerHTML='<div class=\'no-photo\'><i class=\'fas fa-image\'></i><p>Erro ao carregar imagem</p></div>'">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if os.foto_depois_url %}
+                    <div class="photo-section">
+                        <div class="photo-title">
+                            <i class="fas fa-camera"></i>
+                            Foto Depois
+                        </div>
+                        <div class="photo-wrapper">
+                            <img src="{{ url_for('static', filename=os.foto_depois_url.replace('app/static/', '').replace('\\', '/')) }}" 
+                                 alt="Foto depois da execução"
+                                 onerror="this.parentElement.innerHTML='<div class=\'no-photo\'><i class=\'fas fa-image\'></i><p>Erro ao carregar imagem</p></div>'">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if not os.foto_antes_url and not os.foto_depois_url %}
+                    <div class="photo-section">
+                        <div class="no-photo">
+                            <i class="fas fa-images"></i>
+                            <p>Nenhuma foto disponível</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Card de Histórico (full width) -->
+                <div class="detail-card full-width-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-history"></i>
+                        <h3>Histórico da Ordem de Serviço</h3>
+                    </div>
+
+                    {% if historico and historico|length > 0 %}
+                    <div class="timeline-container">
+                        <div class="timeline-line"></div>
+                        {% for h in historico %}
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-status">
+                                {{ h.status_novo.replace('_', ' ').title() }}
+                            </div>
+                            {% if h.comentario %}
+                            <div class="timeline-comment">
+                                {{ h.comentario }}
+                            </div>
+                            {% endif %}
+                            <div class="timeline-meta">
+                                <span>
+                                    <i class="fas fa-calendar"></i>
+                                    {{ h.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                                </span>
+                                <span>
+                                    <i class="fas fa-user"></i>
+                                    {{ h.usuario.nome_completo if h.usuario else 'Sistema' }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="no-photo">
+                        <i class="fas fa-history"></i>
+                        <p>Nenhum histórico registrado para esta OS</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Card de Ações (full width) -->
+                <div class="detail-card full-width-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-tools"></i>
+                        <h3>Ações Disponíveis</h3>
+                    </div>
+
+                    <div class="actions-grid">
+                        {% if current_user.is_gestor %}
+                            {% if os.status in ['criada','atribuida','em_andamento','aguardando_aprovacao'] %}
+                            <form method="POST" action="{{ url_for('os.aprovar', id=os.id) }}" style="display: contents;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Aprovar OS
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            {% if os.status == 'aguardando_aprovacao' %}
+                            <form method="POST" action="{{ url_for('os.rejeitar', id=os.id) }}" style="display: contents;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="motivo_rejeicao" value="Rejeitada pelo gestor.">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja rejeitar esta OS?');">
+                                    <i class="fas fa-times"></i> Rejeitar OS
+                                </button>
+                            </form>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if current_user.is_campo and os.status in ['atribuida','em_andamento'] %}
+                            <form method="POST" action="{{ url_for('os.iniciar', id=os.id) }}" style="display: contents;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-play"></i> Iniciar Execução
+                                </button>
+                            </form>
+
+                            <form method="POST" action="{{ url_for('os.concluir', id=os.id) }}" enctype="multipart/form-data" style="display: contents;" id="formConcluir">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="file" name="foto_depois" id="fotoDepoisInput" accept="image/*" style="display:none">
+                                
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('fotoDepoisInput').click();">
+                                    <i class="fas fa-camera"></i> Enviar Foto Depois
+                                </button>
+                                
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check-circle"></i> Concluir OS
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        {% if not current_user.is_gestor and not (current_user.is_campo and os.status in ['atribuida','em_andamento']) %}
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #64748b;">
+                            <i class="fas fa-info-circle" style="font-size: 24px; margin-bottom: 8px;"></i>
+                            <p>Nenhuma ação disponível para o seu perfil no momento.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Preview da foto depois
+        const fotoInput = document.getElementById('fotoDepoisInput');
+        if (fotoInput) {
+            fotoInput.addEventListener('change', function(e) {
+                const fileName = e.target.files[0]?.name;
+                if (fileName) {
+                    alert(`✅ Foto selecionada: ${fileName}\n\nClique em "Concluir OS" para enviar.`);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

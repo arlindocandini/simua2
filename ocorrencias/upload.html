@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de Ocorrência - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+    <style>
+        /* Estilos específicos para upload */
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .upload-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .upload-card-header i {
+            font-size: 20px;
+            color: #3b82f6;
+        }
+
+        .upload-card-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        /* Tabs modernizadas */
+        .tabs-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: #f8fafc;
+            padding: 6px;
+            border-radius: 10px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-button:hover {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .tab-button.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Dropzone modernizada */
+        .dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .dropzone:hover {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        }
+
+        .dropzone.dragover {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            transform: scale(1.02);
+        }
+
+        .dropzone-icon {
+            font-size: 48px;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+
+        .dropzone-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .dropzone-hint {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* Preview modernizado */
+        .preview-container {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .preview-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .preview-info {
+            flex: 1;
+        }
+
+        .preview-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 15px;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+
+        .preview-details {
+            font-size: 13px;
+            color: #64748b;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .preview-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .preview-detail-item i {
+            color: #94a3b8;
+        }
+
+        /* Campos de formulário */
+        .form-field {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+
+        .form-label i {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .form-label .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            resize: vertical;
+            transition: all 0.2s;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-hint i {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* Grid de localização */
+        .location-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        @media (max-width: 768px) {
+            .location-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Botões */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        .btn i {
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-icon {
+            padding: 12px 16px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 2px solid #f1f5f9;
+        }
+
+        /* Mapa */
+        .map-container {
+            height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        /* Info box */
+        .info-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .info-box-text {
+            font-size: 14px;
+            color: #1e40af;
+            line-height: 1.6;
+        }
+
+        .info-box-text strong {
+            color: #1e3a8a;
+        }
+
+        @media (max-width: 968px) {
+            .upload-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animação de entrada */
+        .upload-card {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .upload-card:nth-child(1) { animation-delay: 0s; }
+        .upload-card:nth-child(2) { animation-delay: 0.1s; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link active">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Nova Ocorrência</h1>
+                <p>Envie uma imagem para classificação automática pela IA</p>
+            </div>
+            <div class="top-actions">
+                <a href="{{ url_for('ocorrencias.lista') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="upload-grid">
+                <!-- Coluna Esquerda: Formulário -->
+                <div class="upload-card">
+                    <div class="upload-card-header">
+                        <i class="fas fa-upload"></i>
+                        <h3>Dados da Ocorrência</h3>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="tabs-container">
+                        <button class="tab-button active" id="tabArquivo" type="button">
+                            <i class="fas fa-file-image"></i>
+                            Arquivo
+                        </button>
+                        <button class="tab-button" id="tabUrl" type="button">
+                            <i class="fas fa-link"></i>
+                            URL
+                        </button>
+                    </div>
+
+                    <form id="formUpload" method="POST" action="{{ url_for('ocorrencias.upload') }}" enctype="multipart/form-data" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <!-- Área de Upload de Arquivo -->
+                        <div id="areaArquivo">
+                            <div class="dropzone" id="dropzone">
+                                <div class="dropzone-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <div class="dropzone-text">
+                                    Arraste e solte a imagem aqui
+                                </div>
+                                <div class="dropzone-hint">
+                                    ou clique para selecionar um arquivo
+                                    <br>
+                                    <small>Formatos aceitos: JPG, PNG • Máximo 10MB</small>
+                                </div>
+
+                                <input type="file" name="imagem" id="inputImagem" accept="image/*" style="display:none"/>
+                                <input type="file" name="image" id="inputImage" accept="image/*" style="display:none"/>
+                                <input type="file" name="file" id="inputFile" accept="image/*" style="display:none"/>
+                            </div>
+
+                            <div class="preview-container" id="preview" style="display:none;">
+                                <img id="previewImg" alt="Preview" class="preview-image"/>
+                                <div class="preview-info">
+                                    <div class="preview-name" id="previewName"></div>
+                                    <div class="preview-details">
+                                        <div class="preview-detail-item">
+                                            <i class="fas fa-weight"></i>
+                                            <span id="previewSize"></span>
+                                        </div>
+                                        <div class="preview-detail-item">
+                                            <i class="fas fa-file-code"></i>
+                                            <span id="previewType"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Área de URL -->
+                        <div id="areaUrl" style="display:none;">
+                            <div class="form-field">
+                                <label for="image_url" class="form-label">
+                                    <i class="fas fa-link"></i>
+                                    URL da Imagem
+                                </label>
+                                <input type="url" name="image_url" id="image_url" class="form-input" placeholder="https://exemplo.com/imagem.jpg">
+                                <div class="form-hint">
+                                    <i class="fas fa-info-circle"></i>
+                                    Cole a URL completa da imagem
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos do Formulário -->
+                        <div class="form-field">
+                            <label for="camera_id" class="form-label">
+                                <i class="fas fa-camera"></i>
+                                ID da Câmera
+                                <span class="required">*</span>
+                            </label>
+                            <input type="text" name="camera_id" id="camera_id" class="form-input" placeholder="Ex.: CAM-001" required>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Identificador da câmera que capturou a imagem
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="captured_at" class="form-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Data/Hora da Captura
+                            </label>
+                            <input type="datetime-local" name="captured_at" id="captured_at" class="form-input">
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Será preenchido automaticamente se disponível nos dados EXIF
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Localização GPS
+                                <span class="required">*</span>
+                            </label>
+                            <div class="location-grid">
+                                <input type="number" step="any" name="latitude" id="latitude" class="form-input" placeholder="Latitude" required>
+                                <input type="number" step="any" name="longitude" id="longitude" class="form-input" placeholder="Longitude" required>
+                                <button class="btn btn-secondary btn-icon" type="button" id="btnGeo" title="Usar minha posição">
+                                    <i class="fas fa-location-crosshairs"></i>
+                                </button>
+                            </div>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Clique no mapa ao lado ou use o botão para obter sua localização atual
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="observacoes" class="form-label">
+                                <i class="fas fa-comment-alt"></i>
+                                Observações (Opcional)
+                            </label>
+                            <textarea name="observacoes" id="observacoes" class="form-textarea" placeholder="Ex.: Ponto crítico, problema recorrente, risco próximo a poste, etc."></textarea>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Adicione informações relevantes sobre a ocorrência
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-paper-plane"></i> Enviar para Classificação
+                            </button>
+                            <button class="btn btn-secondary" type="reset">
+                                <i class="fas fa-eraser"></i> Limpar Formulário
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="info-box">
+                        <div class="info-box-text">
+                            <strong><i class="fas fa-robot"></i> Processamento Inteligente:</strong>
+                            Ao enviar, o sistema utiliza IA de visão para classificar automaticamente o problema
+                            (buraco, fiação exposta, lixo, etc.), cria a ocorrência com geolocalização e disponibiliza
+                            no <strong>Mapa</strong> e na <strong>Lista</strong> para gestão.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Mapa -->
+                <div class="upload-card">
+                    <div class="upload-card-header">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <h3>Selecione no Mapa</h3>
+                    </div>
+                    <div class="map-container" id="map-upload"></div>
+                    <div class="form-hint" style="margin-top: 12px;">
+                        <i class="fas fa-info-circle"></i>
+                        Clique no mapa para definir as coordenadas GPS da ocorrência
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <script>
+        // -------- Abas (Arquivo / URL) --------
+        const tabArq = document.getElementById('tabArquivo');
+        const tabUrl = document.getElementById('tabUrl');
+        const areaArq = document.getElementById('areaArquivo');
+        const areaUrl = document.getElementById('areaUrl');
+
+        function setTab(useFile) {
+            tabArq.classList.toggle('active', useFile);
+            tabUrl.classList.toggle('active', !useFile);
+            areaArq.style.display = useFile ? '' : 'none';
+            areaUrl.style.display = useFile ? 'none' : '';
+            if (!useFile) {
+                const dtEmpty = new DataTransfer();
+                inputImagem.files = dtEmpty.files;
+                inputImage.files = dtEmpty.files;
+                inputFile.files = dtEmpty.files;
+                preview.style.display = 'none';
+            }
+        }
+
+        tabArq.addEventListener('click', () => setTab(true));
+        tabUrl.addEventListener('click', () => setTab(false));
+        document.addEventListener('DOMContentLoaded', () => setTab(true));
+
+        // -------- DnD / Seleção de arquivo --------
+        const dz = document.getElementById('dropzone');
+        const inputImagem = document.getElementById('inputImagem');
+        const inputImage = document.getElementById('inputImage');
+        const inputFile = document.getElementById('inputFile');
+        const preview = document.getElementById('preview');
+        const previewImg = document.getElementById('previewImg');
+        const previewName = document.getElementById('previewName');
+        const previewSize = document.getElementById('previewSize');
+        const previewType = document.getElementById('previewType');
+
+        dz.addEventListener('click', () => inputImagem.click());
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+        dz.addEventListener('drop', e => {
+            e.preventDefault();
+            dz.classList.remove('dragover');
+            const file = e.dataTransfer?.files?.[0];
+            if (file) setFileInputs(file);
+        });
+
+        inputImagem.addEventListener('change', e => {
+            const file = e.target.files?.[0];
+            if (file) setFileInputs(file);
+        });
+
+        function setFileInputs(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('⚠️ Por favor, selecione uma imagem válida (JPG, PNG, etc.)');
+                return;
+            }
+
+            // Preenche TODOS os inputs
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            inputImagem.files = dt.files;
+            inputImage.files = dt.files;
+            inputFile.files = dt.files;
+
+            // Preview
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                previewImg.src = ev.target.result;
+                previewName.textContent = file.name;
+                previewSize.textContent = `${Math.round(file.size/1024)} KB`;
+                previewType.textContent = file.type;
+                preview.style.display = '';
+                tryReadEXIF(file);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // -------- EXIF GPS --------
+        function tryReadEXIF(file) {
+            if (!window.EXIF) return;
+            EXIF.getData(file, function() {
+                const lat = EXIF.getTag(this, 'GPSLatitude');
+                const latRef = EXIF.getTag(this, 'GPSLatitudeRef');
+                const lng = EXIF.getTag(this, 'GPSLongitude');
+                const lngRef = EXIF.getTag(this, 'GPSLongitudeRef');
+                const dt = EXIF.getTag(this, 'DateTimeOriginal');
+
+                if (lat && lng && latRef && lngRef) {
+                    const toFloat = (r) => (r.num || r.numerator)/(r.den || r.denominator);
+                    const dmsToDeg = (dms) => toFloat(dms[0]) + (toFloat(dms[1])/60) + (toFloat(dms[2])/3600);
+                    const toDeg = (dec, ref) => (ref==='S' || ref==='W') ? -dec : dec;
+                    const latDec = toDeg(dmsToDeg(lat), latRef);
+                    const lngDec = toDeg(dmsToDeg(lng), lngRef);
+                    if (!isNaN(latDec) && !isNaN(lngDec)) {
+                        document.getElementById('latitude').value = latDec.toFixed(6);
+                        document.getElementById('longitude').value = lngDec.toFixed(6);
+                        if (window._mapSet) window._mapSet(latDec, lngDec);
+                    }
+                }
+                if (dt && !document.getElementById('captured_at').value) {
+                    const parsed = dt.replace(/:/, '-').replace(/:/, '-').replace(' ', 'T').slice(0,16);
+                    document.getElementById('captured_at').value = parsed;
+                }
+            });
+        }
+
+        // -------- Geolocalização --------
+        document.getElementById('btnGeo').addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                alert('❌ Geolocalização não é suportada pelo seu navegador.');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(pos => {
+                const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                if (window._mapSet) window._mapSet(lat, lng);
+            }, () => alert('❌ Não foi possível obter sua localização. Verifique as permissões do navegador.'));
+        });
+
+        // -------- Leaflet --------
+        let map, marker;
+        function initMap() {
+            map = L.map('map-upload').setView([-16.6869, -49.2648], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            function setMarker(lat, lng) {
+                if (marker) marker.setLatLng([lat, lng]);
+                else {
+                    const customIcon = L.divIcon({
+                        html: '<div style="font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">📍</div>',
+                        className: 'custom-marker',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 40]
+                    });
+                    marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+                }
+                map.panTo([lat, lng]);
+            }
+            window._mapSet = setMarker;
+
+            map.on('click', (e) => {
+                const { lat, lng } = e.latlng;
+                document.getElementById('latitude').value = lat.toFixed(6);
+                document.getElementById('longitude').value = lng.toFixed(6);
+                setMarker(lat, lng);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', initMap);
+
+        // -------- Validação --------
+        const form = document.getElementById('formUpload');
+        const inputUrl = document.getElementById('image_url');
+
+        form.addEventListener('submit', (e) => {
+            const usandoArquivo = areaArq.style.display !== 'none';
+            const temArquivo = inputImagem.files && inputImagem.files.length > 0;
+            const temUrl = (inputUrl.value || '').trim().length > 0;
+
+            if ((usandoArquivo && !temArquivo) || (!usandoArquivo && !temUrl)) {
+                e.preventDefault();
+                alert('⚠️ Por favor, envie uma imagem (arquivo ou URL) antes de submeter o formulário.');
+                if (usandoArquivo) inputImagem.click();
+                return false;
+            }
+
+            // Validação de coordenadas
+            const lat = document.getElementById('latitude').value;
+            const lng = document.getElementById('longitude').value;
+            if (!lat || !lng) {
+                e.preventDefault();
+                alert('⚠️ Por favor, defina a localização GPS clicando no mapa ou usando o botão de geolocalização.');
+                return false;
+            }
+        });
+
+        // Limpar preview ao resetar
+        form.addEventListener('reset', () => {
+            setTimeout(() => {
+                preview.style.display = 'none';
+                if (marker) map.removeLayer(marker);
+            }, 100);
+        });
+    </script>
+</body>
+</html>

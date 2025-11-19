@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ equipe.nome }} - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+    <style>
+        /* Grid layout */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Cards */
+        .detail-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-card:nth-child(1) { animation-delay: 0s; }
+        .detail-card:nth-child(2) { animation-delay: 0.1s; }
+        .detail-card:nth-child(3) { animation-delay: 0.2s; }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .card-title i {
+            font-size: 20px;
+            color: #3b82f6;
+        }
+
+        /* Info fields */
+        .info-field {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .info-field:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-label i {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .info-value {
+            font-size: 15px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge.ativa {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge.inativa {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Tabela de membros */
+        .members-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .members-table thead {
+            background: #f8fafc;
+        }
+
+        .members-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .members-table td {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .members-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #475569;
+            margin: 0 0 8px 0;
+        }
+
+        .empty-state p {
+            color: #64748b;
+            margin: 0;
+        }
+
+        /* Add member form */
+        .add-member-form {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f1f5f9;
+            flex-wrap: wrap;
+        }
+
+        .add-member-select {
+            flex: 1;
+            min-width: 250px;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .add-member-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        /* Botões */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        .btn i {
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 968px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .add-member-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .add-member-select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link active">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>{{ equipe.nome }}</h1>
+                <p>Informações detalhadas e membros da equipe</p>
+            </div>
+            <div class="top-actions">
+                {% if current_user.tipo_usuario == 'admin' %}
+                <a href="{{ url_for('equipes.editar', id=equipe.id) }}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                {% endif %}
+                <a href="{{ url_for('equipes.lista') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="details-grid">
+                <!-- Card de Informações -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-info-circle"></i>
+                            Informações da Equipe
+                        </div>
+                    </div>
+
+                    <div class="info-field">
+                        <div class="info-label">
+                            <i class="fas fa-tag"></i>
+                            Nome da Equipe
+                        </div>
+                        <div class="info-value">{{ equipe.nome }}</div>
+                    </div>
+
+                    <div class="info-field">
+                        <div class="info-label">
+                            <i class="fas fa-tools"></i>
+                            Tipo de Serviço
+                        </div>
+                        <div class="info-value">{{ equipe.tipo_servico or '-' }}</div>
+                    </div>
+
+                    <div class="info-field">
+                        <div class="info-label">
+                            <i class="fas fa-phone"></i>
+                            Telefone de Emergência
+                        </div>
+                        <div class="info-value">{{ equipe.telefone_emergencia or 'Não informado' }}</div>
+                    </div>
+
+                    <div class="info-field">
+                        <div class="info-label">
+                            <i class="fas fa-flag"></i>
+                            Status
+                        </div>
+                        <div class="info-value">
+                            {% if equipe.ativa %}
+                                <span class="badge ativa">
+                                    <i class="fas fa-check-circle"></i>
+                                    Ativa
+                                </span>
+                            {% else %}
+                                <span class="badge inativa">
+                                    <i class="fas fa-times-circle"></i>
+                                    Inativa
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if equipe.responsavel_id %}
+                    <div class="info-field">
+                        <div class="info-label">
+                            <i class="fas fa-user-tie"></i>
+                            Responsável
+                        </div>
+                        <div class="info-value">
+                            {% for m in membros %}
+                                {% if m.id == equipe.responsavel_id %}{{ m.nome_completo }}{% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if current_user.tipo_usuario == 'admin' %}
+                    <div class="action-buttons" style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #f1f5f9;">
+                        <form action="{{ url_for('equipes.excluir', id=equipe.id) }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('⚠️ ATENÇÃO: Deseja excluir permanentemente esta equipe? Esta ação não pode ser desfeita.')">
+                                <i class="fas fa-trash-alt"></i> Excluir Equipe
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Card de Estatísticas -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Estatísticas de Performance
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Total de OS</div>
+                            <div class="stat-value">{{ total_os }}</div>
+                        </div>
+
+                        <div class="stat-box" style="border-left-color: #10b981;">
+                            <div class="stat-label">OS Concluídas</div>
+                            <div class="stat-value" style="color: #10b981;">{{ os_concluidas }}</div>
+                        </div>
+
+                        <div class="stat-box" style="border-left-color: #f59e0b;">
+                            <div class="stat-label">OS Ativas</div>
+                            <div class="stat-value" style="color: #f59e0b;">{{ os_ativas }}</div>
+                        </div>
+
+                        <div class="stat-box" style="border-left-color: #8b5cf6;">
+                            <div class="stat-label">Taxa de Conclusão</div>
+                            <div class="stat-value" style="color: #8b5cf6;">{{ taxa_conclusao }}%</div>
+                        </div>
+                    </div>
+
+                    <a href="{{ url_for('equipes.performance', id=equipe.id) }}" class="btn btn-primary" style="margin-top: 20px; width: 100%; justify-content: center;">
+                        <i class="fas fa-chart-bar"></i> Ver Performance Detalhada
+                    </a>
+                </div>
+
+                <!-- Card de Membros (largura completa) -->
+                <div class="detail-card full-width">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-user-friends"></i>
+                            Membros da Equipe
+                            <span style="background: #e2e8f0; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 12px; margin-left: 8px;">
+                                {{ membros|length }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if membros and membros|length > 0 %}
+                    <table class="members-table">
+                        <thead>
+                            <tr>
+                                <th>Nome Completo</th>
+                                <th>E-mail</th>
+                                <th style="width: 120px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in membros %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-user" style="color: #94a3b8; margin-right: 8px;"></i>
+                                    <strong>{{ m.nome_completo }}</strong>
+                                    {% if m.id == equipe.responsavel_id %}
+                                        <span class="badge" style="background: #dbeafe; color: #1e40af; margin-left: 8px;">
+                                            <i class="fas fa-star"></i> Responsável
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ m.email }}</td>
+                                <td>
+                                    {% if current_user.tipo_usuario == 'admin' %}
+                                    <form method="POST" action="{{ url_for('equipes.remover_membro', id=equipe.id, usuario_id=m.id) }}" style="display:inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover {{ m.nome_completo }} desta equipe?')" title="Remover Membro">
+                                            <i class="fas fa-user-minus"></i> Remover
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-users-slash"></i>
+                        <h4>Nenhum membro na equipe</h4>
+                        <p>Adicione membros para começar a gerenciar as atividades</p>
+                    </div>
+                    {% endif %}
+
+                    {% if current_user.tipo_usuario == 'admin' %}
+                    <form method="POST" action="{{ url_for('equipes.adicionar_membro', id=equipe.id) }}" class="add-member-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label style="font-size: 14px; font-weight: 600; color: #475569; white-space: nowrap;">
+                            <i class="fas fa-user-plus"></i> Adicionar Membro:
+                        </label>
+                        <select name="usuario_id" required class="add-member-select">
+                            <option value="">Selecione um usuário...</option>
+                            {% for u in usuarios_disponiveis %}
+                                <option value="{{ u.id }}">{{ u.nome_completo }} ({{ u.email }})</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Adicionar
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

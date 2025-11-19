@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIU – Sistema Inteligente Urbano - SIMUA</title>
+
+    <!-- Fonte e ícones -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <!-- CSS global do SIMUA -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+
+    <style>
+        /* ====== Estilos específicos do SIU ====== */
+
+        .siu-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 16px 24px 24px;
+        }
+
+        /* KPIs */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 22px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .kpi-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+
+        .kpi-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-header i {
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eff6ff;
+            color: #3b82f6;
+            font-size: 18px;
+        }
+
+        .kpi-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .kpi-caption {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        /* Filtros Avançados */
+        .filtros-avancados {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .filtros-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .filtros-header i {
+            color: #3b82f6;
+            font-size: 18px;
+        }
+
+        .filtros-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .filtros-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        .filtro-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filtro-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Botões de criticidade */
+        .criticidade-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-criticidade {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-criticidade:hover {
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .btn-criticidade.active {
+            border-color: currentColor;
+            box-shadow: 0 0 0 3px currentColor;
+            opacity: 0.2;
+        }
+
+        .btn-criticidade.active {
+            opacity: 1;
+        }
+
+        .btn-criticidade i {
+            font-size: 14px;
+        }
+
+        .btn-todas {
+            color: #64748b;
+            border-color: #cbd5e1;
+        }
+
+        .btn-todas.active {
+            background: #f1f5f9;
+            border-color: #64748b;
+            box-shadow: none;
+        }
+
+        .btn-critica {
+            color: #dc2626;
+        }
+
+        .btn-ruim {
+            color: #ef4444;
+        }
+
+        .btn-regular {
+            color: #f97316;
+        }
+
+        .btn-boa {
+            color: #eab308;
+        }
+
+        .btn-excelente {
+            color: #10b981;
+        }
+
+        .btn-limpar {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+
+        .btn-limpar:hover {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #dc2626;
+        }
+
+        /* Grid principal: mapa + lista */
+        .siu-main-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 18px;
+            margin-top: 8px;
+        }
+
+        @media (max-width: 1024px) {
+            .siu-main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .siu-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 22px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+        }
+
+        .siu-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .siu-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .siu-card-title i {
+            font-size: 18px;
+            color: #3b82f6;
+        }
+
+        .siu-card-title h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .resultados-count {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Filtros da lista */
+        .siu-filters {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .filter-input,
+        .filter-select {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            font-size: 13px;
+            font-family: 'Poppins', sans-serif;
+            background: white;
+            color: #334155;
+            transition: all 0.2s;
+        }
+
+        .filter-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+        }
+
+        /* Mapa */
+        #map-siu {
+            height: 520px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(15,23,42,0.08);
+            position: relative;
+        }
+
+        .map-empty-state {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .map-empty-badge {
+            background: rgba(255,255,255,0.96);
+            border-radius: 12px;
+            padding: 18px 22px;
+            box-shadow: 0 8px 20px rgba(15,23,42,0.16);
+            text-align: center;
+        }
+
+        .map-empty-badge i {
+            font-size: 30px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .map-empty-badge p {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* Lista de ruas */
+        .ruas-container {
+            max-height: 520px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .ruas-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .ruas-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 999px;
+        }
+        .ruas-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+        .ruas-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .rua-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 14px 14px 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .rua-item:hover {
+            background: #ffffff;
+            border-color: #dbeafe;
+            box-shadow: 0 2px 10px rgba(59,130,246,0.12);
+            transform: translateX(2px);
+        }
+
+        .rua-item.active {
+            background: #ffffff;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 16px rgba(59,130,246,0.24);
+        }
+
+        .rua-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .rua-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .rua-nome {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .rua-meta {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .rua-badge {
+            font-size: 14px;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 8px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .rua-bar-wrapper {
+            height: 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .rua-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .rua-bar-label {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 10px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 32px;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+        }
+
+        .empty-state h4 {
+            font-size: 15px;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+
+        .empty-state p {
+            font-size: 12px;
+        }
+
+        /* Popup customizado do Leaflet */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .popup-rua-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+
+        .popup-rua-nota {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .popup-rua-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Modal SIU */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 920px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px 26px 26px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+            animation: slideUp 0.28s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+            gap: 12px;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #f1f5f9;
+            border: none;
+            font-size: 18px;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .modal-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+
+        .modal-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 10px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .modal-card {
+            display: flex;
+            gap: 10px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .modal-card-img {
+            width: 70px;
+            height: 70px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .modal-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .modal-card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .modal-card-meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+
+        .modal-card-status {
+            font-size: 11px;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                        <span class="badge-nav">{{ pagination.total if pagination else 0 }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Score de Integridade Urbana</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+        <!-- Top bar -->
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>SIU – Sistema Inteligente Urbano</h1>
+                <p>A nota de saúde das ruas, calculada a partir das ocorrências registradas pelo SIMUA</p>
+            </div>
+            <div class="top-actions">
+                <a href="{{ url_for('ocorrencias.mapa') }}" class="btn btn-secondary">
+                    <i class="fas fa-map-marked-alt"></i> Ver mapa geral de ocorrências
+                </a>
+            </div>
+        </div>
+
+        <div class="siu-container">
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <i class="fas fa-fire"></i>
+                        <div class="kpi-title">Ruas críticas</div>
+                    </div>
+                    <div id="kpi-criticas" class="kpi-value">—</div>
+                    <div class="kpi-caption">Nota abaixo de 30 pontos</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="kpi-title">Ruas ruins</div>
+                    </div>
+                    <div id="kpi-ruins" class="kpi-value">—</div>
+                    <div class="kpi-caption">Nota entre 30 e 49 pontos</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <i class="fas fa-leaf"></i>
+                        <div class="kpi-title">Ruas saudáveis</div>
+                    </div>
+                    <div id="kpi-saudaveis" class="kpi-value">—</div>
+                    <div class="kpi-caption">Nota igual ou acima de 85 pontos</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <i class="fas fa-brain"></i>
+                        <div class="kpi-title">Saúde geral da cidade</div>
+                    </div>
+                    <div id="kpi-media" class="kpi-value">—</div>
+                    <div class="kpi-caption">Média das notas das ruas monitoradas</div>
+                </div>
+            </div>
+
+            <!-- Filtros Avançados -->
+            <div class="filtros-avancados">
+                <div class="filtros-header">
+                    <i class="fas fa-filter"></i>
+                    <h3>Filtros Avançados</h3>
+                </div>
+
+                <div class="filtros-grid">
+                    <!-- Filtro de Bairro -->
+                    <div class="filtro-group">
+                        <label class="filtro-label">Bairro</label>
+                        <select id="filtro-bairro-avancado" class="filter-select">
+                            <option value="">Todos os bairros</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro de Criticidade -->
+                    <div class="filtro-group" style="grid-column: 1 / -1;">
+                        <label class="filtro-label">Criticidade</label>
+                        <div class="criticidade-buttons">
+                            <button class="btn-criticidade btn-todas active" data-criticidade="todas">
+                                <i class="fas fa-list"></i>
+                                Todas
+                            </button>
+                            <button class="btn-criticidade btn-critica" data-criticidade="critica">
+                                <i class="fas fa-fire"></i>
+                                Crítica (0-29)
+                            </button>
+                            <button class="btn-criticidade btn-ruim" data-criticidade="ruim">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Ruim (30-49)
+                            </button>
+                            <button class="btn-criticidade btn-regular" data-criticidade="regular">
+                                <i class="fas fa-minus-circle"></i>
+                                Regular (50-69)
+                            </button>
+                            <button class="btn-criticidade btn-boa" data-criticidade="boa">
+                                <i class="fas fa-check-circle"></i>
+                                Boa (70-84)
+                            </button>
+                            <button class="btn-criticidade btn-excelente" data-criticidade="excelente">
+                                <i class="fas fa-star"></i>
+                                Excelente (85-100)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botão Limpar -->
+                    <div class="filtro-group">
+                        <label class="filtro-label">&nbsp;</label>
+                        <button id="btn-limpar-filtros" class="btn-limpar">
+                            <i class="fas fa-times"></i> Limpar Filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid principal -->
+            <div class="siu-main-grid">
+                <!-- Mapa -->
+                <div class="siu-card">
+                    <div class="siu-card-header">
+                        <div class="siu-card-title">
+                            <i class="fas fa-map"></i>
+                            <h3>Mapa de ruas monitoradas</h3>
+                        </div>
+                        <span id="map-count" class="resultados-count"></span>
+                    </div>
+                    <div id="map-siu"></div>
+                </div>
+
+                <!-- Lista de ruas -->
+                <div class="siu-card">
+                    <div class="siu-card-header">
+                        <div class="siu-card-title">
+                            <i class="fas fa-road"></i>
+                            <h3>Ruas e Avenidas</h3>
+                        </div>
+                        <span id="lista-count" class="resultados-count"></span>
+                    </div>
+
+                    <div class="siu-filters">
+                        <input id="filtro-busca" type="text" class="filter-input" placeholder="🔍 Buscar por nome da rua...">
+                    </div>
+
+                    <div id="lista-ruas" class="ruas-container">
+                        <div class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <h4>Carregando SIU...</h4>
+                            <p>Buscando dados de saúde das ruas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal SIU -->
+    <div id="modal-rua" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-rua-nome"></h2>
+                <button class="modal-close" onclick="fecharModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modal-rua-info" class="modal-subtitle"></div>
+
+            <div class="modal-section-title">
+                <i class="fas fa-history"></i>
+                Histórico de ocorrências
+            </div>
+            <div id="modal-historico" class="modal-grid"></div>
+        </div>
+    </div>
+
+    <!-- Scripts Leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- JS do SIU -->
+    <script>
+        const state = {
+            dados: [],
+            filtrados: [],
+            mapa: null,
+            marcadores: [],
+            bairroSelecionado: '',
+            criticidadeSelecionada: 'todas',
+            buscaTexto: '',
+            ruaSelecionada: null
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            inicializarMapa();
+            await carregarDados();
+            configurarEventos();
+        });
+
+        function configurarEventos() {
+            // Filtro de bairro
+            document.getElementById('filtro-bairro-avancado').addEventListener('change', aplicarFiltros);
+            
+            // Filtro de busca
+            document.getElementById('filtro-busca').addEventListener('input', aplicarFiltros);
+
+            // Botões de criticidade
+            document.querySelectorAll('.btn-criticidade').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.btn-criticidade').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.criticidadeSelecionada = btn.dataset.criticidade;
+                    aplicarFiltros();
+                });
+            });
+
+            // Botão limpar filtros
+            document.getElementById('btn-limpar-filtros').addEventListener('click', limparFiltros);
+
+            // Clique nas ruas da lista
+            document.getElementById('lista-ruas').addEventListener('click', (e) => {
+                const item = e.target.closest('.rua-item');
+                if (item) {
+                    const ruaNome = item.dataset.rua;
+                    focalizarRuaNoMapa(ruaNome);
+                }
+            });
+
+            // Modal
+            document.getElementById('modal-rua').addEventListener('click', (e) => {
+                if (e.target.id === 'modal-rua') fecharModal();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') fecharModal();
+            });
+        }
+
+        async function carregarDados() {
+            try {
+                const resp = await fetch('/api/saude-ruas');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const json = await resp.json();
+
+                if (!json.data || !json.data.length) {
+                    mostrarEstadoVazio();
+                    return;
+                }
+
+                // 🔹 API JÁ RETORNA O BAIRRO - Só filtrar ruas/avenidas
+                state.dados = json.data.filter(item => ehRuaOuAvenida(item.rua));
+
+                console.log('✅ Dados carregados:', state.dados.length, 'ruas');
+                console.log('📍 Exemplo de bairro:', state.dados[0]?.bairro);
+
+                popularBairros();
+                atualizarKPIs();
+                aplicarFiltros();
+            } catch (e) {
+                console.error('Erro ao carregar /api/saude-ruas:', e);
+                mostrarErro();
+            }
+        }
+
+        function ehRuaOuAvenida(nome) {
+            if (!nome) return false;
+            
+            const nomeLower = nome.toLowerCase().trim();
+            
+            const prefixosValidos = [
+                'rua', 'avenida', 'av.', 'av ', 'travessa', 'alameda',
+                'viela', 'via', 'estrada', 'rodovia', 'largo'
+            ];
+            
+            const prefixosInvalidos = [
+                'condomínio', 'condominio', 'edifício', 'edificio', 
+                'residencial', 'praça', 'praca', 'quadra', 'lote',
+                'bloco', 'torre', 'conjunto', 'vila', 'parque'
+            ];
+            
+            for (const inv of prefixosInvalidos) {
+                if (nomeLower.startsWith(inv)) {
+                    return false;
+                }
+            }
+            
+            for (const val of prefixosValidos) {
+                if (nomeLower.startsWith(val)) {
+                    return true;
+                }
+            }
+            
+            if (/^\d+$/.test(nomeLower)) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        function popularBairros() {
+            const select = document.getElementById('filtro-bairro-avancado');
+            const bairrosSet = new Set(state.dados.map(r => r.bairro).filter(Boolean));
+            const bairros = Array.from(bairrosSet).sort();
+
+            console.log('📍 Bairros encontrados:', bairros);
+
+            bairros.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b;
+                opt.textContent = b;
+                select.appendChild(opt);
+            });
+
+            if (!bairros.length) {
+                select.disabled = true;
+                select.title = 'Nenhuma informação de bairro disponível nos dados';
+            }
+        }
+
+        function atualizarKPIs() {
+            if (!state.dados.length) return;
+
+            const criticas = state.dados.filter(r => r.nota < 30).length;
+            const ruins = state.dados.filter(r => r.nota >= 30 && r.nota < 50).length;
+            const saudaveis = state.dados.filter(r => r.nota >= 85).length;
+            const media = state.dados.reduce((acc, r) => acc + r.nota, 0) / state.dados.length;
+
+            document.getElementById('kpi-criticas').textContent = criticas;
+            document.getElementById('kpi-ruins').textContent = ruins;
+            document.getElementById('kpi-saudaveis').textContent = saudaveis;
+            document.getElementById('kpi-media').textContent = media.toFixed(1);
+        }
+
+        function getCategoriaRua(nota) {
+            if (nota < 30) return 'critica';
+            if (nota < 50) return 'ruim';
+            if (nota < 70) return 'regular';
+            if (nota < 85) return 'boa';
+            return 'excelente';
+        }
+
+        function aplicarFiltros() {
+            state.bairroSelecionado = document.getElementById('filtro-bairro-avancado').value;
+            state.buscaTexto = document.getElementById('filtro-busca').value.toLowerCase();
+
+            state.filtrados = state.dados.filter(rua => {
+                // Filtro de bairro (comparação exata)
+                const matchBairro = !state.bairroSelecionado ||
+                    rua.bairro === state.bairroSelecionado;
+                
+                // Filtro de busca
+                const matchBusca = !state.buscaTexto ||
+                    (rua.rua || '').toLowerCase().includes(state.buscaTexto);
+                
+                // Filtro de criticidade
+                const categoria = getCategoriaRua(rua.nota);
+                const matchCriticidade = state.criticidadeSelecionada === 'todas' ||
+                    categoria === state.criticidadeSelecionada;
+
+                return matchBairro && matchBusca && matchCriticidade;
+            });
+
+            renderizarLista();
+            atualizarMapa();
+            atualizarContadores();
+        }
+
+        function limparFiltros() {
+            document.getElementById('filtro-bairro-avancado').value = '';
+            document.getElementById('filtro-busca').value = '';
+            
+            document.querySelectorAll('.btn-criticidade').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-criticidade="todas"]').classList.add('active');
+            
+            state.bairroSelecionado = '';
+            state.buscaTexto = '';
+            state.criticidadeSelecionada = 'todas';
+            state.ruaSelecionada = null;
+            
+            aplicarFiltros();
+        }
+
+        function atualizarContadores() {
+            const total = state.filtrados.length;
+            document.getElementById('map-count').textContent = `${total} rua${total !== 1 ? 's' : ''}`;
+            document.getElementById('lista-count').textContent = `${total} resultado${total !== 1 ? 's' : ''}`;
+        }
+
+        function renderizarLista() {
+            const container = document.getElementById('lista-ruas');
+
+            if (!state.filtrados.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h4>Nenhuma rua encontrada</h4>
+                        <p>Ajuste os filtros para ver resultados</p>
+                    </div>`;
+                return;
+            }
+
+            const ordenadas = [...state.filtrados].sort((a,b) => a.nota - b.nota);
+
+            container.innerHTML = ordenadas.map(rua => {
+                const nota = parseFloat(rua.nota) || 0;
+                const largura = Math.max(5, Math.min(100, nota));
+                const { cor, bgBadge, corBadge } = getCorPorNota(nota);
+                const ocorr = rua.total_ocorrencias || 0;
+
+                return `
+                    <div class="rua-item ${state.ruaSelecionada === rua.rua ? 'active' : ''}" 
+                         data-rua="${rua.rua}">
+                        <div class="rua-top">
+                            <div class="rua-info">
+                                <div class="rua-nome">${rua.rua || 'Sem nome'}</div>
+                                <div class="rua-meta">
+                                    ${ocorr} ocorrência${ocorr === 1 ? '' : 's'}
+                                    ${rua.bairro ? ' • ' + rua.bairro : ''}
+                                </div>
+                            </div>
+                            <div class="rua-badge" style="background:${bgBadge}; color:${corBadge};">
+                                ${nota.toFixed(1)}
+                            </div>
+                        </div>
+                        <div class="rua-bar-wrapper">
+                            <div class="rua-bar-fill" style="width:${largura}%; background:${cor};"></div>
+                        </div>
+                        <div class="rua-bar-label">
+                            Índice de saúde: ${nota.toFixed(1)} / 100
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getCorPorNota(nota) {
+            if (nota < 30) {
+                return { cor: '#dc2626', bgBadge: '#fee2e2', corBadge: '#991b1b' };
+            } else if (nota < 50) {
+                return { cor: '#ef4444', bgBadge: '#fecaca', corBadge: '#b91c1c' };
+            } else if (nota < 70) {
+                return { cor: '#f97316', bgBadge: '#ffedd5', corBadge: '#c2410c' };
+            } else if (nota < 85) {
+                return { cor: '#eab308', bgBadge: '#fef3c7', corBadge: '#a16207' };
+            } else {
+                return { cor: '#10b981', bgBadge: '#d1fae5', corBadge: '#047857' };
+            }
+        }
+
+        function inicializarMapa() {
+            state.mapa = L.map('map-siu').setView([-16.6869, -49.2648], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(state.mapa);
+        }
+
+        function atualizarMapa() {
+            // Limpar marcadores existentes
+            state.marcadores.forEach(m => state.mapa.removeLayer(m));
+            state.marcadores = [];
+
+            const mapDiv = document.getElementById('map-siu');
+            removerMapaVazio(mapDiv);
+
+            if (!state.filtrados.length) {
+                mostrarMapaVazio(mapDiv);
+                state.mapa.setView([-16.6869, -49.2648], 13);
+                return;
+            }
+
+            const bounds = [];
+
+            // 🔹 SE UMA RUA ESPECÍFICA FOI SELECIONADA, mostrar apenas ela
+            const ruasParaMostrar = state.ruaSelecionada 
+                ? state.filtrados.filter(r => r.rua === state.ruaSelecionada)
+                : state.filtrados;
+
+            ruasParaMostrar.forEach(rua => {
+                if (!rua.coordenadas || rua.coordenadas.length === 0) return;
+
+                // Calcular centro da rua
+                let latSum = 0, lngSum = 0, count = 0;
+                
+                rua.coordenadas.forEach(coord => {
+                    const lat = parseFloat(coord.lat);
+                    const lng = parseFloat(coord.lng);
+
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        latSum += lat;
+                        lngSum += lng;
+                        count++;
+                        bounds.push([lat, lng]);
+                    }
+                });
+
+                if (count === 0) return;
+
+                const centroLat = latSum / count;
+                const centroLng = lngSum / count;
+
+                // Obter cor do marcador
+                const { cor } = getCorPorNota(rua.nota);
+                
+                // Criar ícone customizado colorido
+                const icon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `
+                        <div style="
+                            background: ${cor};
+                            width: 30px;
+                            height: 30px;
+                            border-radius: 50% 50% 50% 0;
+                            transform: rotate(-45deg);
+                            border: 3px solid white;
+                            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+                        "></div>
+                    `,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30],
+                    popupAnchor: [0, -30]
+                });
+
+                // Criar marcador
+                const marker = L.marker([centroLat, centroLng], { icon })
+                    .addTo(state.mapa)
+                    .bindPopup(`
+                        <div class="popup-rua-title">${rua.rua}</div>
+                        <div class="popup-rua-nota" style="color: ${cor};">
+                            ${rua.nota.toFixed(1)}/100
+                        </div>
+                        <div class="popup-rua-meta">
+                            ${rua.total_ocorrencias} ocorrência${rua.total_ocorrencias === 1 ? '' : 's'}
+                            ${rua.bairro ? ' • ' + rua.bairro : ''}
+                        </div>
+                    `);
+
+                marker.on('click', () => {
+                    abrirModal(rua.rua);
+                });
+
+                state.marcadores.push(marker);
+            });
+
+            if (bounds.length > 0) {
+                state.mapa.fitBounds(bounds, { padding: [40, 40] });
+            }
+        }
+
+        // 🔹 FUNÇÃO: Focalizar apenas uma rua no mapa
+        function focalizarRuaNoMapa(ruaNome) {
+            const rua = state.filtrados.find(r => r.rua === ruaNome);
+            if (!rua || !rua.coordenadas || rua.coordenadas.length === 0) return;
+
+            // 🔹 Definir rua selecionada
+            state.ruaSelecionada = ruaNome;
+            
+            // Renderizar lista com destaque
+            renderizarLista();
+            
+            // 🔹 Atualizar mapa para mostrar APENAS esta rua
+            atualizarMapa();
+
+            // Calcular centro da rua
+            let latSum = 0, lngSum = 0, count = 0;
+            
+            rua.coordenadas.forEach(coord => {
+                const lat = parseFloat(coord.lat);
+                const lng = parseFloat(coord.lng);
+
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    latSum += lat;
+                    lngSum += lng;
+                    count++;
+                }
+            });
+
+            if (count === 0) return;
+
+            const centroLat = latSum / count;
+            const centroLng = lngSum / count;
+
+            // Zoom e centralizar no mapa
+            setTimeout(() => {
+                state.mapa.setView([centroLat, centroLng], 17, {
+                    animate: true,
+                    duration: 1
+                });
+
+                // Abrir popup do marcador
+                if (state.marcadores.length > 0) {
+                    setTimeout(() => state.marcadores[0].openPopup(), 500);
+                }
+            }, 100);
+
+            // Abrir modal com histórico
+            setTimeout(() => abrirModal(ruaNome), 800);
+        }
+
+        async function abrirModal(rua) {
+            if (!rua) return;
+            try {
+                const resp = await fetch('/api/siu/rua/' + encodeURIComponent(rua));
+                if (!resp.ok) throw new Error('Erro ao buscar histórico');
+                const data = await resp.json();
+
+                document.getElementById('modal-rua-nome').textContent = data.rua || rua;
+                document.getElementById('modal-rua-info').textContent =
+                    `${data.total || 0} ocorrência${(data.total || 0) === 1 ? '' : 's'} registrada${(data.total || 0) === 1 ? '' : 's'} nesta via`;
+
+                const container = document.getElementById('modal-historico');
+                if (!data.historico || !data.historico.length) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h4>Sem histórico</h4>
+                            <p>Nenhuma ocorrência detalhada disponível para esta rua</p>
+                        </div>`;
+                } else {
+                    container.innerHTML = data.historico.map(h => {
+                        const imgPath = h.imagem
+                            ? ('/' + h.imagem.replace(/^\/+/, ''))
+                            : '/static/images/no-image.png';
+                        return `
+                            <div class="modal-card">
+                                <img src="${imgPath}" alt="Ocorrência" class="modal-card-img">
+                                <div class="modal-card-info">
+                                    <div class="modal-card-title">${h.data || 'Data não informada'}</div>
+                                    <div class="modal-card-meta">
+                                        ${h.categoria || 'Categoria não informada'} • ${h.urgencia || 'Urgência não informada'}
+                                    </div>
+                                    <div class="modal-card-status">
+                                        Status: ${h.status || 'Pendente'}
+                                    </div>
+                                </div>
+                            </div>`;
+                    }).join('');
+                }
+
+                document.getElementById('modal-rua').classList.add('active');
+            } catch (e) {
+                console.error('Erro ao abrir modal da rua:', e);
+                alert('Não foi possível carregar o histórico desta rua.');
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-rua').classList.remove('active');
+            
+            // 🔹 Ao fechar modal, desselecionar rua e voltar ao normal
+            state.ruaSelecionada = null;
+            renderizarLista();
+            atualizarMapa();
+        }
+
+        function mostrarMapaVazio(container) {
+            if (document.getElementById('map-empty')) return;
+            const div = document.createElement('div');
+            div.id = 'map-empty';
+            div.className = 'map-empty-state';
+            div.innerHTML = `
+                <div class="map-empty-badge">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <p>Nenhum dado para exibir no mapa com os filtros atuais</p>
+                </div>`;
+            container.appendChild(div);
+        }
+
+        function removerMapaVazio(container) {
+            const empty = document.getElementById('map-empty');
+            if (empty && container.contains(empty)) {
+                empty.remove();
+            }
+        }
+
+        function mostrarEstadoVazio() {
+            document.getElementById('lista-ruas').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-road"></i>
+                    <h4>Nenhuma rua monitorada</h4>
+                    <p>Não há dados de saúde das ruas disponíveis</p>
+                </div>`;
+            document.getElementById('kpi-criticas').textContent = '0';
+            document.getElementById('kpi-ruins').textContent = '0';
+            document.getElementById('kpi-saudaveis').textContent = '0';
+            document.getElementById('kpi-media').textContent = '—';
+        }
+
+        function mostrarErro() {
+            document.getElementById('lista-ruas').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
+                    <h4>Erro ao carregar dados</h4>
+                    <p>Verifique a API /api/saude-ruas e tente novamente</p>
+                </div>`;
+        }
+    </script>
+</body>
+</html>

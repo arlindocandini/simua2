@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRL - Índice de Risco Legal - SIMUA</title>
+
+    <!-- Fonte e Ícones -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- CSS Global do SIMUA -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/irl_improved.css') }}">
+
+    <style>
+        /* ====== Estilos Específicos do IRL ====== */
+        :root {
+            --color-primary: #4338ca;
+            --color-critical: #dc2626;
+            --color-high: #f59e0b;
+            --color-medium: #10b981;
+            --color-low: #3b82f6;
+        }
+        
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Layout Principal com Sidebar */
+        .main-content {
+            margin-left: 280px;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 8px 0;
+        }
+
+        .page-title p {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: #4338ca;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3730a3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 56, 202, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        /* Filtros Avançados */
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #4338ca;
+            box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Container Principal */
+        .irl-container { 
+            max-width: 100%;
+        }
+        
+        /* KPIs */
+        .kpi-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .kpi-item { 
+            text-align: center; 
+            padding: 24px; 
+            border-radius: 12px; 
+            background: white; 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .kpi-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .kpi-value { 
+            font-size: 32px; 
+            font-weight: 800; 
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        
+        .kpi-label { 
+            font-size: 13px; 
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Layout Grid Principal */
+        .main-grid { 
+            display: grid; 
+            grid-template-columns: 2fr 1.2fr; 
+            gap: 24px; 
+        }
+        
+        /* Cards Comuns */
+        .irl-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .irl-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .irl-card-title i { 
+            margin-right: 10px; 
+            color: #6366f1;
+            font-size: 20px;
+        }
+
+        /* Mapa */
+        #irl-map { 
+            height: 450px; 
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .map-controls input,
+        .map-controls select {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        /* Ranking */
+        .ranking-tabs {
+            display: flex;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 16px;
+        }
+
+        .ranking-tab {
+            flex: 1;
+            padding: 10px 16px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .ranking-tab.active {
+            background: white;
+            color: #4338ca;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .ranking-list {
+            height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .ranking-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ranking-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .ranking-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .ranking-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .ranking-item {
+            padding: 16px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            transition: all 0.2s ease;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .ranking-item:hover { 
+            background: #f8fafc; 
+            border-left-color: var(--color-primary);
+            transform: translateX(4px);
+        }
+        
+        .ranking-item.active { 
+            background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+            border-left-color: var(--color-primary);
+            box-shadow: 0 3px 12px rgba(67, 56, 202, 0.15);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #cbd5e1;
+            margin-bottom: 16px;
+        }
+
+        /* Responsividade */
+        @media (max-width: 1200px) {
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+            }
+
+            .main-grid { 
+                grid-template-columns: 1fr; 
+            }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-grid { 
+                grid-template-columns: 1fr 1fr; 
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .top-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Análises Avançadas</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.irl') }}" class="nav-link active">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>IRL - Risco Legal</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.aru') }}" class="nav-link">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>ARU - Reincidência</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="page-title">
+                <h1><i class="fas fa-balance-scale"></i> IRL - Índice de Risco Legal</h1>
+                <p>Análise de passivos jurídicos e priorização por impacto legal e financeiro</p>
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-secondary" onclick="exportarRelatorioIRL()">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button class="btn btn-primary" onclick="atualizarDados()">
+                    <i class="fas fa-sync-alt"></i> Atualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros Avançados -->
+        <div class="filters">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-alt"></i> Período</label>
+                    <select id="filterPeriodo">
+                        <option value="7">Últimos 7 dias</option>
+                        <option value="30" selected>Últimos 30 dias</option>
+                        <option value="90">Últimos 90 dias</option>
+                        <option value="180">Últimos 6 meses</option>
+                        <option value="365">Último ano</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-shield-alt"></i> Nível de Risco</label>
+                    <select id="filterRisco">
+                        <option value="">Todos os Níveis</option>
+                        <option value="extremo">🔴 Extremo</option>
+                        <option value="alto">🟠 Alto</option>
+                        <option value="medio">🟡 Médio</option>
+                        <option value="baixo">🟢 Baixo</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Região</label>
+                    <select id="filterRegiao">
+                        <option value="">Todas as Regiões</option>
+                        <option value="centro">Centro</option>
+                        <option value="norte">Norte</option>
+                        <option value="sul">Sul</option>
+                        <option value="leste">Leste</option>
+                        <option value="oeste">Oeste</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-list"></i> Categoria</label>
+                    <select id="filterCategoria">
+                        <option value="">Todas as Categorias</option>
+                        <option value="asfalto_dano">Asfalto Danificado</option>
+                        <option value="calcada_dano">Calçada Danificada</option>
+                        <option value="iluminacao_publica">Iluminação Pública</option>
+                        <option value="fiacao_exposta">Fiação Exposta</option>
+                        <option value="arvore_dano">Árvore Danificada</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-dollar-sign"></i> Faixa de Custo</label>
+                    <select id="filterCusto">
+                        <option value="">Todos os Custos</option>
+                        <option value="0-1000">Até R$ 1.000</option>
+                        <option value="1000-5000">R$ 1.000 - R$ 5.000</option>
+                        <option value="5000-10000">R$ 5.000 - R$ 10.000</option>
+                        <option value="10000-999999">Acima de R$ 10.000</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-flag"></i> Status</label>
+                    <select id="filterStatus">
+                        <option value="">Todos os Status</option>
+                        <option value="ABERTA">Aberta</option>
+                        <option value="EM_CAMPO">Em Campo</option>
+                        <option value="CONCLUIDA">Concluída</option>
+                        <option value="APROVADA">Aprovada</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-secondary" onclick="limparFiltros()">
+                    <i class="fas fa-times"></i> Limpar Filtros
+                </button>
+                <button class="btn btn-primary" onclick="aplicarFiltros()">
+                    <i class="fas fa-filter"></i> Aplicar Filtros
+                </button>
+            </div>
+        </div>
+
+        <div class="irl-container">
+            <!-- 1. Indicadores Chave (KPIs) -->
+            <div class="kpi-grid" id="kpi-area">
+                <div class="kpi-item">
+                    <div class="kpi-value text-red-600" id="kpi-criticas">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="kpi-label">Ocorrências Críticas (Alto/Extremo)</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="kpi-value text-yellow-600" id="kpi-media-irl">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="kpi-label">IRL Médio Total</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="kpi-value text-green-600" id="kpi-baixo-custo">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="kpi-label">Custo Médio de Reparo</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="kpi-value text-indigo-600" id="kpi-alto-custo">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="kpi-label">Total de OS Abertas</div>
+                </div>
+            </div>
+
+            <!-- 2. Main Grid: Mapa & Ranking/Detalhes -->
+            <div class="main-grid">
+                <!-- Coluna Esquerda: Mapa -->
+                <div>
+                    <div class="irl-card">
+                        <div class="irl-card-title">
+                            <i class="fas fa-map-marked-alt"></i>
+                            Distribuição Geográfica do Risco (IRL)
+                        </div>
+                        <div class="map-controls">
+                            <input type="text" id="filtroBusca" placeholder="🔍 Buscar por endereço ou número de OS...">
+                        </div>
+                        <div id="irl-map"></div>
+                        <div style="margin-top: 16px; display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="width: 12px; height: 12px; background: #dc2626; border-radius: 50%;"></span>
+                                <span style="font-size: 12px; color: #64748b;">Extremo</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 50%;"></span>
+                                <span style="font-size: 12px; color: #64748b;">Alto</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="width: 12px; height: 12px; background: #10b981; border-radius: 50%;"></span>
+                                <span style="font-size: 12px; color: #64748b;">Médio</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="width: 12px; height: 12px; background: #3b82f6; border-radius: 50%;"></span>
+                                <span style="font-size: 12px; color: #64748b;">Baixo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Ranking e Detalhes -->
+                <div>
+                    <!-- A. Ranking -->
+                    <div class="irl-card">
+                        <div class="irl-card-title">
+                            <i class="fas fa-layer-group"></i>
+                            Ocorrências em Destaque
+                        </div>
+                        
+                        <!-- Abas de Modo -->
+                        <div class="ranking-tabs">
+                            <button class="ranking-tab active" data-mode="irl">
+                                <i class="fas fa-shield-alt"></i> Maior Risco
+                            </button>
+                            <button class="ranking-tab" data-mode="custo">
+                                <i class="fas fa-dollar-sign"></i> Maior Custo
+                            </button>
+                            <button class="ranking-tab" data-mode="exposicao">
+                                <i class="fas fa-clock"></i> Maior Exposição
+                            </button>
+                        </div>
+
+                        <!-- Lista de Ranking -->
+                        <div class="ranking-list">
+                            <ul id="top-10-list">
+                                <li class="empty-state">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <h4>Carregando dados...</h4>
+                                    <p>Buscando ocorrências do IRL</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- B. Detalhes -->
+                    <div class="irl-card">
+                        <div class="irl-card-title">
+                            <i class="fas fa-file-invoice"></i>
+                            Análise de Risco Detalhada
+                        </div>
+                        <div id="detail-card">
+                            <div class="empty-state" style="padding: 40px 20px;">
+                                <i class="fas fa-arrow-left"></i>
+                                <h4>Selecione uma ocorrência</h4>
+                                <p>Clique em um item da lista ou no mapa para visualizar a análise completa de risco jurídico e custos.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/irl_dashboard.js') }}" defer></script>
+    <script>
+        // Funções auxiliares
+        function exportarRelatorioIRL() {
+            alert('Funcionalidade de exportação em desenvolvimento');
+            // Implementar exportação para PDF
+        }
+
+        function atualizarDados() {
+            location.reload();
+        }
+
+        function limparFiltros() {
+            document.getElementById('filterPeriodo').value = '30';
+            document.getElementById('filterRisco').value = '';
+            document.getElementById('filterRegiao').value = '';
+            document.getElementById('filterCategoria').value = '';
+            document.getElementById('filterCusto').value = '';
+            document.getElementById('filterStatus').value = '';
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            // Esta função será integrada com o irl_dashboard.js
+            console.log('Aplicando filtros...');
+            if (typeof carregarDadosIRL === 'function') {
+                carregarDadosIRL();
+            }
+        }
+
+        // Event listeners para os filtros
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tabs de ranking
+            document.querySelectorAll('.ranking-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const mode = this.getAttribute('data-mode');
+                    if (typeof alternarModoRanking === 'function') {
+                        alternarModoRanking(mode);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!-- Sidebar de Navegação -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <img src="{{ url_for('static', filename='images/logosimua.png') }}" alt="Logo" class="logo">
+        <h2>Prefeitura</h2>
+    </div>
+    
+    <nav class="sidebar-nav">
+        {% if current_user.is_gestor or current_user.is_admin %}
+            <!-- Menu Gestor/Admin -->
+            <a href="{{ url_for('dashboard.gestor') }}" class="nav-item {% if request.endpoint == 'dashboard.gestor' %}active{% endif %}">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="{{ url_for('ocorrencias.lista') }}" class="nav-item {% if request.endpoint.startswith('ocorrencias') %}active{% endif %}">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Ocorrências</span>
+            </a>
+            
+            <a href="{{ url_for('os.lista') }}" class="nav-item {% if request.endpoint.startswith('os') %}active{% endif %}">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Ordens de Serviço</span>
+            </a>
+
+            <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-item {% if request.endpoint == 'ocorrencias.mapa' %}active{% endif %}">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>Mapa</span>
+            </a>
+
+            <a href="{{ url_for('dashboard.aru') }}" class="nav-item {% if request.endpoint == 'dashboard.aru' %}active{% endif %}">
+                <i class="fas fa-magnifying-glass-location"></i>
+                <span>Alerta de Reincidência</span>
+            </a>
+
+            <a href="{{ url_for('dashboard.irl') }}" class="nav-item {% if request.endpoint == 'dashboard.irl' %}active{% endif %}">
+                <i class="fas fa-scale-balanced"></i>
+                <span>Índice de Risco Legal</span>
+            </a>
+            
+            <a href="{{ url_for('cameras.lista') }}" class="nav-item {% if request.endpoint.startswith('cameras') %}active{% endif %}">
+                <i class="fas fa-video"></i>
+                <span>Câmeras</span>
+            </a>
+            
+            <a href="{{ url_for('relatorios.index') }}" class="nav-item {% if request.endpoint.startswith('relatorios') %}active{% endif %}">
+                <i class="fas fa-file-pdf"></i>
+                <span>Relatórios</span>
+            </a>
+            
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('equipes.lista') }}" class="nav-item {% if request.endpoint.startswith('equipes') %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span>Equipes</span>
+            </a>
+            {% endif %}
+            
+        {% elif current_user.is_campo %}
+            <!-- Menu Equipe de Campo -->
+            <a href="{{ url_for('dashboard.campo') }}" class="nav-item {% if request.endpoint == 'dashboard.campo' %}active{% endif %}">
+                <i class="fas fa-home"></i>
+                <span>Início</span>
+            </a>
+            
+            <a href="{{ url_for('os.minhas_os') }}" class="nav-item {% if request.endpoint == 'os.minhas_os' %}active{% endif %}">
+                <i class="fas fa-tasks"></i>
+                <span>Minhas OS</span>
+            </a>
+            
+            <a href="{{ url_for('os.mapa_campo') }}" class="nav-item {% if request.endpoint == 'os.mapa_campo' %}active{% endif %}">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Mapa de Trabalho</span>
+            </a>
+        {% endif %}
+    </nav>
+    
+    <div class="sidebar-footer">
+        <a href="{{ url_for('perfil.index') }}" class="nav-item">
+            <i class="fas fa-user-circle"></i>
+            <span>Meu Perfil</span>
+        </a>
+        
+        <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Sair</span>
+        </a>
+    </div>
+</div>
+
+<style>
+.sidebar {
+    width: 250px;
+    background: linear-gradient(180deg, #0a2a18 0%, #1b4428 100%);
+    color: white;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header .logo {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
+    border-radius: 50%;
+}
+
+.sidebar-header h2 {
+    font-size: 20px;
+    margin: 0;
+    font-weight: 600;
+}
+
+.sidebar-nav {
+    padding: 20px 0;
+    flex: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left-color: #4CAF50;
+    transform: translateX(5px);
+}
+
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-left-color: #4CAF50;
+    font-weight: 600;
+}
+
+.nav-item i {
+    font-size: 18px;
+    width: 30px;
+    text-align: center;
+    margin-right: 12px;
+}
+
+.nav-item.logout {
+    color: #ff6b6b;
+}
+
+.nav-item.logout:hover {
+    background: rgba(255, 107, 107, 0.1);
+    border-left-color: #ff6b6b;
+}
+
+.sidebar-footer {
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 0;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+    }
+    
+    .sidebar-header h2,
+    .nav-item span {
+        display: none;
+    }
+    
+    .nav-item {
+        justify-content: center;
+        padding: 15px;
+    }
+    
+    .nav-item i {
+        margin-right: 0;
+    }
+}
+</style>

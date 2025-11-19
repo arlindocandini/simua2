@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Equipe - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+    <style>
+        /* Form container */
+        .form-container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .form-header i {
+            font-size: 24px;
+            color: #3b82f6;
+        }
+
+        .form-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        /* Form fields */
+        .form-field {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+
+        .form-label i {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .form-label .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-hint i {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* Form actions */
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 2px solid #f1f5f9;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Poppins', sans-serif;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        .btn i {
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        /* Info box */
+        .info-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+        }
+
+        .info-box-text {
+            font-size: 14px;
+            color: #1e40af;
+            line-height: 1.6;
+        }
+
+        .info-box-text strong {
+            color: #1e3a8a;
+        }
+
+        @media (max-width: 768px) {
+            .form-card {
+                padding: 24px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link active">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Editar Equipe</h1>
+                <p>Atualize as informações da equipe {{ equipe.nome }}</p>
+            </div>
+            <div class="top-actions">
+                <a href="{{ url_for('equipes.detalhes', id=equipe.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="form-container">
+                <div class="info-box">
+                    <div class="info-box-text">
+                        <strong><i class="fas fa-info-circle"></i> Atenção:</strong>
+                        Os campos marcados com <span style="color: #ef4444;">*</span> são obrigatórios. 
+                        Certifique-se de preencher todas as informações necessárias antes de salvar.
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <div class="form-header">
+                        <i class="fas fa-edit"></i>
+                        <h3>Informações da Equipe</h3>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('equipes.editar', id=equipe.id) }}" id="formEditarEquipe">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <div class="form-field">
+                            <label for="nome" class="form-label">
+                                <i class="fas fa-users"></i>
+                                Nome da Equipe
+                                <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="nome" 
+                                id="nome" 
+                                value="{{ equipe.nome }}" 
+                                required 
+                                class="form-input"
+                                placeholder="Ex.: Equipe Alpha - Pavimentação"
+                            >
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Nome identificador da equipe (mínimo 3 caracteres)
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="tipo_servico" class="form-label">
+                                <i class="fas fa-tools"></i>
+                                Tipo de Serviço
+                                <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                name="tipo_servico" 
+                                id="tipo_servico" 
+                                value="{{ equipe.tipo_servico }}" 
+                                required 
+                                class="form-input"
+                                placeholder="Ex.: Pavimentação, Iluminação, Limpeza"
+                            >
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Especialidade principal da equipe
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="telefone_emergencia" class="form-label">
+                                <i class="fas fa-phone"></i>
+                                Telefone de Emergência
+                            </label>
+                            <input 
+                                type="text" 
+                                name="telefone_emergencia" 
+                                id="telefone_emergencia" 
+                                value="{{ equipe.telefone_emergencia or '' }}" 
+                                class="form-input"
+                                placeholder="Ex.: (62) 99999-9999"
+                            >
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Número para contato em situações urgentes
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="responsavel_id" class="form-label">
+                                <i class="fas fa-user-tie"></i>
+                                Responsável da Equipe
+                            </label>
+                            <select name="responsavel_id" id="responsavel_id" class="form-select">
+                                <option value="">-- Selecione um responsável --</option>
+                                {% for u in usuarios %}
+                                <option value="{{ u.id }}" {% if equipe.responsavel_id == u.id %}selected{% endif %}>
+                                    {{ u.nome_completo }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i>
+                                Usuário responsável por coordenar esta equipe
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <a href="{{ url_for('equipes.detalhes', id=equipe.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i>
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Validação do formulário
+        document.getElementById('formEditarEquipe').addEventListener('submit', function(e) {
+            const nome = document.getElementById('nome').value.trim();
+            const tipo = document.getElementById('tipo_servico').value.trim();
+
+            if (nome.length < 3) {
+                e.preventDefault();
+                alert('⚠️ O nome da equipe deve ter pelo menos 3 caracteres.');
+                document.getElementById('nome').focus();
+                return false;
+            }
+
+            if (tipo.length < 3) {
+                e.preventDefault();
+                alert('⚠️ O tipo de serviço deve ter pelo menos 3 caracteres.');
+                document.getElementById('tipo_servico').focus();
+                return false;
+            }
+        });
+
+        // Máscara de telefone
+        const telefoneInput = document.getElementById('telefone_emergencia');
+        if (telefoneInput) {
+            telefoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                
+                if (value.length >= 11) {
+                    value = value.replace(/^(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                } else if (value.length >= 6) {
+                    value = value.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+                } else if (value.length >= 2) {
+                    value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                }
+                
+                e.target.value = value;
+            });
+        }
+    </script>
+</body>
+</html>

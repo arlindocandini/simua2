@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta de Reincidência Urbana - SIMUA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_modern.css') }}">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-section">
+                <div class="logo">
+                    <i class="fas fa-city"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>SIMUA</h1>
+                    <p>{{ municipio|default('Goiânia - GO') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-title">Menu Principal</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.gestor') }}" class="nav-link">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.lista') }}" class="nav-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Ocorrências</span>
+                        <span class="badge-nav" id="badgeOcorrencias">0</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('os.lista') }}" class="nav-link">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Ordens de Serviço</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ocorrencias.mapa') }}" class="nav-link">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Geral</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.aru') }}" class="nav-link active">
+                        <i class="fas fa-magnifying-glass-location"></i>
+                        <span>Alerta de Reincidência</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Gestão</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('equipes.lista') }}" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Equipes</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cameras.lista') }}" class="nav-link">
+                        <i class="fas fa-camera"></i>
+                        <span>Câmeras</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('relatorios.index') }}" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <div class="nav-title">Sistema</div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar">{{ current_user.nome[:2].upper() if current_user.nome else 'US' }}</div>
+                <div class="user-info">
+                    <h4>{{ current_user.nome }}</h4>
+                    <p>{{ current_user.perfil|capitalize }}</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main-content">
+        <div class="top-bar hero">
+            <div class="page-title">
+                <p class="eyebrow">Alerta de Reincidência Urbana</p>
+                <h1>A lupa da reincidência urbana</h1>
+                <p class="text-muted">Fiscalização inteligente para descobrir pontos viciados, reincidentes e críticos.</p>
+                <div class="hero-pills">
+                    <span class="pill"><i class="fas fa-layer-group"></i> Clusters por endereço</span>
+                    <span class="pill"><i class="fas fa-location-dot"></i> GPS preciso</span>
+                    <span class="pill"><i class="fas fa-clock"></i> Análise temporal</span>
+                </div>
+            </div>
+            <div class="top-actions">
+                <div class="data-window">
+                    <i class="fas fa-calendar-alt"></i>
+                    <div>
+                        <small>Janela monitorada</small>
+                        <strong>{{ filtros.inicio or resumo.periodo_display.inicio }} - {{ filtros.fim or resumo.periodo_display.fim }}</strong>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="window.location.href='{{ url_for('relatorios.index') }}'">
+                    <i class="fas fa-download"></i> Exportar visão
+                </button>
+            </div>
+        </div>
+
+        <div class="container">
+            <form class="card filter-card" method="get" action="{{ url_for('dashboard.aru') }}">
+                <div class="card-header">
+                    <div>
+                        <h3>Filtros de foco</h3>
+                        <p class="text-muted">Refine por região, equipe, categoria e período</p>
+                    </div>
+                    <div class="pill-group">
+                        <span class="pill"><i class="fas fa-filter"></i> Visão personalizada</span>
+                        <span class="pill"><i class="fas fa-clock"></i> Últimos {{ resumo.dias_monitorados }} dias</span>
+                    </div>
+                </div>
+
+                <div class="filter-grid enhanced">
+                    <div class="form-control">
+                        <label for="inicio">Data inicial</label>
+                        <input type="date" id="inicio" name="inicio" value="{{ filtros.inicio }}">
+                    </div>
+                    <div class="form-control">
+                        <label for="fim">Data final</label>
+                        <input type="date" id="fim" name="fim" value="{{ filtros.fim }}">
+                    </div>
+                    <div class="form-control">
+                        <label for="regiao">Região/Bairro</label>
+                        <input type="text" id="regiao" name="regiao" placeholder="Centro, Setor Sul..." value="{{ filtros.regiao }}">
+                    </div>
+                    <div class="form-control">
+                        <label for="equipe_id">Equipe</label>
+                        <select id="equipe_id" name="equipe_id">
+                            <option value="">Todas</option>
+                            {% for equipe in equipes %}
+                                <option value="{{ equipe.id }}" {% if filtros.equipe_id == equipe.id|string %}selected{% endif %}>{{ equipe.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-control full">
+                        <label for="categoria">Tipo de ocorrência</label>
+                        <select id="categoria" name="categoria" multiple>
+                            {% for categoria in categorias_disponiveis %}
+                                <option value="{{ categoria }}" {% if categoria in filtros.categorias %}selected{% endif %}>{{ categoria.replace('_', ' ')|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="help-text">Use CTRL/CMD para selecionar várias categorias</p>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <div class="inline-hint">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Combine região + categoria para revelar verdadeiros pontos viciados.</span>
+                    </div>
+                    <div class="actions-right">
+                        <a class="btn btn-secondary" href="{{ url_for('dashboard.aru') }}"><i class="fas fa-rotate"></i> Limpar</a>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Aplicar filtros</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="highlight-card">
+                <div>
+                    <p class="eyebrow">Radar de reincidência</p>
+                    <h2>Inspecione onde os problemas insistem em voltar</h2>
+                    <p class="text-muted">Priorize fiscalização, ajuste contratos e reforce políticas públicas com base em recorrência real — não só volume.</p>
+                    {% if disponibilidade_dados %}
+                        <div class="availability">
+                            <i class="fas fa-database"></i>
+                            <div>
+                                <small>Dados georreferenciados disponíveis</small>
+                                <strong>{{ disponibilidade_dados.inicio }} → {{ disponibilidade_dados.fim }}</strong>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="pill-column">
+                    <span class="pill"><i class="fas fa-route"></i> Rotas e histórico</span>
+                    <span class="pill"><i class="fas fa-users-cog"></i> Equipes e SLA</span>
+                    <span class="pill"><i class="fas fa-shield-alt"></i> Foco de fiscalização</span>
+                </div>
+            </div>
+
+            {% if not clusters and disponibilidade_dados %}
+                <div class="info-banner">
+                    <i class="fas fa-circle-info"></i>
+                    <div>
+                        <strong>Sem reincidências no período filtrado.</strong>
+                        <p class="text-muted">Há dados georreferenciados entre {{ disponibilidade_dados.inicio }} e {{ disponibilidade_dados.fim }}. Ajuste as datas para visualizar os pontos reincidentes.</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="grid three">
+                <div class="card metric-card">
+                    <div class="card-header">
+                        <span class="metric-label">Pontos reincidentes</span>
+                        <i class="fas fa-map-pin"></i>
+                    </div>
+                    <h3>{{ resumo.total_pontos }}</h3>
+                    <p class="metric-sub">Monitorados nos últimos {{ resumo.dias_monitorados }} dias</p>
+                </div>
+                <div class="card metric-card">
+                    <div class="card-header">
+                        <span class="metric-label">Pontos críticos</span>
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <h3>{{ resumo.pontos_criticos }}</h3>
+                    <p class="metric-sub">3+ reincidências no período</p>
+                </div>
+                <div class="card metric-card">
+                    <div class="card-header">
+                        <span class="metric-label">Ordens em aberto</span>
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </div>
+                    <h3>{{ resumo.ocorrencias_abertas }}</h3>
+                    <p class="metric-sub">Pendências ligadas a pontos reincidentes</p>
+                </div>
+            </div>
+
+            <div class="grid two">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Calor de reincidência</h3>
+                            <p class="text-muted">Categorias com maior repetição</p>
+                        </div>
+                        <div class="legend">
+                            <span class="legend-dot high"></span> Alto
+                            <span class="legend-dot medium"></span> Médio
+                            <span class="legend-dot low"></span> Baixo
+                        </div>
+                    </div>
+                    <div class="heat-list">
+                        {% if categorias_heat %}
+                            {% for categoria, total in categorias_heat.items() %}
+                                {% set intensidade = 'high' if loop.index <= 2 else 'medium' if loop.index <= 5 else 'low' %}
+                                <div class="heat-row">
+                                    <div>
+                                        <p class="heat-label">{{ categoria.replace('_', ' ')|capitalize }}</p>
+                                        <small class="text-muted">{{ total }} ocorrência(s)</small>
+                                    </div>
+                                    <div class="heat-bar">
+                                        <div class="heat-fill {{ intensidade }}" style="width: {{ (total / max_calor * 100) if max_calor else 0 }}%"></div>
+                                    </div>
+                                    <span class="heat-value">{{ total }}</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">Nenhuma reincidência encontrada no período.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>Foco de fiscalização</h3>
+                            <p class="text-muted">Onde agir agora</p>
+                        </div>
+                        <span class="badge badge-warning">Radar ativo</span>
+                    </div>
+                    <div class="focus-list">
+                        {% for cluster in clusters[:4] %}
+                            <div class="focus-item">
+                                <div>
+                                    <p class="focus-title">{{ cluster.endereco or 'Localização não informada' }}</p>
+                                    <p class="text-muted">{{ cluster.categoria.replace('_', ' ')|capitalize }} • {{ cluster.recorrencias }}x</p>
+                                </div>
+                                <div class="focus-metrics">
+                                    <span class="pill small {{ 'pill-alert' if cluster.abertas else 'pill-success' }}">{{ cluster.abertas }} abertas</span>
+                                    {% if cluster.intervalo_medio %}
+                                        <span class="pill small">~{{ cluster.intervalo_medio }} dias</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Nenhum ponto reincidente priorizado.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card map-card">
+                <div class="card-header">
+                    <div>
+                        <h3>Mapa analítico</h3>
+                        <p class="text-muted">Concentre equipes onde a reincidência persiste</p>
+                    </div>
+                    <div class="pill-group">
+                        <span class="pill"><i class="fas fa-check-circle"></i> Em operação</span>
+                        <span class="pill pill-alert"><i class="fas fa-circle-exclamation"></i> Com pendência</span>
+                    </div>
+                </div>
+                <div class="map-insights">
+                    <div id="aru-map" class="map-view"></div>
+                    <div class="map-panel">
+                        <div class="panel-header">
+                            <p class="eyebrow">Resumo da visão</p>
+                            <h4>{{ clusters|length }} ponto(s) reincidente(s)</h4>
+                            <p class="text-muted">Somente pontos com geolocalização e pelo menos 2 ocorrências.</p>
+                        </div>
+                        <ul class="panel-list">
+                            <li><i class="fas fa-calendar-week"></i> Período: {{ filtros.inicio or resumo.periodo_display.inicio }} → {{ filtros.fim or resumo.periodo_display.fim }}</li>
+                            <li><i class="fas fa-flag"></i> Categorias: {{ filtros.categorias|length and filtros.categorias|join(', ') or 'Todas' }}</li>
+                            <li><i class="fas fa-users"></i> Equipe: {{ filtros.equipe_id and 'Equipe selecionada' or 'Todas' }}</li>
+                            <li><i class="fas fa-location-dot"></i> Região: {{ filtros.regiao or 'Cidade inteira' }}</li>
+                        </ul>
+                        <div class="panel-tip">
+                            <i class="fas fa-lightbulb"></i>
+                            <div>
+                                <strong>Dica</strong>
+                                <p>Use zoom para separar clusters próximos. Clique nos marcadores para ver recorrência e status.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>Pontos reincidentes</h3>
+                        <p class="text-muted">Linha do tempo das ordens de serviço</p>
+                    </div>
+                    <span class="badge">{{ clusters|length }} monitorados</span>
+                </div>
+
+                <div class="recurrence-list">
+                    {% for cluster in clusters %}
+                        <div class="recurrence-item">
+                            <div class="recurrence-header">
+                                <div>
+                                    <h4>{{ cluster.endereco or 'Localização não informada' }}</h4>
+                                    <p class="text-muted">{{ cluster.categoria.replace('_', ' ')|capitalize }} • {{ cluster.recorrencias }} reincidências</p>
+                                </div>
+                                <div class="recurrence-tags">
+                                    <span class="pill small {{ 'pill-alert' if cluster.abertas else 'pill-success' }}">{{ cluster.abertas }} abertas</span>
+                                    <span class="pill small"><i class="fas fa-calendar"></i> Última: {{ cluster.ultima_data.strftime('%d/%m/%Y') }}</span>
+                                    {% if cluster.intervalo_medio %}
+                                        <span class="pill small">Freq. média: {{ cluster.intervalo_medio }} dias</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="timeline">
+                                {% for os in cluster.timeline %}
+                                    <div class="timeline-item {{ 'active' if loop.first else '' }}">
+                                        <div class="timeline-dot"></div>
+                                        <div class="timeline-content">
+                                            <p class="timeline-title">{{ os.numero_os or 'OS' }} • {{ os.status.replace('_', ' ')|capitalize }}</p>
+                                            <p class="text-muted">{{ os.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                                            <p class="text-muted">{{ os.endereco_completo }}</p>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Nenhuma reincidência identificada no período analisado.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        const clustersData = {{ clusters_mapa | tojson }};
+
+        function formatCategoria(valor) {
+            return valor ? valor.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Categoria não informada';
+        }
+
+        function initMap() {
+            const hasData = clustersData.length > 0;
+            const defaultCenter = hasData ? [clustersData[0].latitude, clustersData[0].longitude] : [-15.7801, -47.9292];
+            const defaultZoom = hasData ? 12 : 4;
+
+            const map = L.map('aru-map', {
+                scrollWheelZoom: true,
+                zoomControl: true
+            }).setView(defaultCenter, defaultZoom);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            if (!hasData) {
+                const emptyState = L.control({ position: 'topright' });
+                emptyState.onAdd = () => {
+                    const div = L.DomUtil.create('div', 'leaflet-empty-state');
+                    div.innerHTML = '<i class="fas fa-circle-info"></i> Nenhum ponto reincidente no período selecionado.';
+                    return div;
+                };
+                emptyState.addTo(map);
+                return;
+            }
+
+            const bounds = [];
+            clustersData.forEach((cluster) => {
+                const color = cluster.abertas > 0 ? '#F59E0B' : '#10B981';
+                const radius = Math.min(18, 8 + (cluster.recorrencias || 0) * 1.2);
+
+                const marker = L.circleMarker([cluster.latitude, cluster.longitude], {
+                    color,
+                    fillColor: color,
+                    fillOpacity: 0.65,
+                    radius,
+                    weight: 2,
+                    className: 'aru-marker'
+                }).addTo(map);
+
+                const ultimaData = cluster.ultima_data || '-';
+                const endereco = cluster.endereco || 'Localização não informada';
+                marker.bindPopup(`
+                    <strong>${endereco}</strong><br>
+                    ${formatCategoria(cluster.categoria)}<br>
+                    ${cluster.recorrencias} reincidência(s) • ${cluster.abertas} aberta(s)<br>
+                    Última ocorrência: ${ultimaData}
+                `);
+
+                bounds.push([cluster.latitude, cluster.longitude]);
+            });
+
+            if (bounds.length > 1) {
+                map.fitBounds(bounds, { padding: [40, 40] });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+</html>
