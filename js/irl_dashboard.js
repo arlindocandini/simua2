@@ -2,14 +2,24 @@ let map = null;
 let markersLayer = new L.LayerGroup();
 let selectedOccurrence = null;
 let currentStatusFilter = 'Todos';
-let currentLocalizacaoFilter = 'Todos'; // Este filtro não está sendo usado no HTML, mas mantido
 let currentCategoriaFilter = 'Todos';
+let currentRiskFilter = 'Todos';
+let currentBairroFilter = 'Todos';
 let currentSearchTerm = '';
 let currentRankingMode = 'irl';
 let occurrences = [];
 let processedOccurrences = [];
 let filteredOccurrences = [];
 let focusedOccurrenceId = null;
+let currentIRLRange = [0, 100];
+let currentCostRange = [0, 50000];
+let dynamicCostUpperBound = 50000;
+
+const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0
+});
 
 // Mapeamento de Cores de Risco
 const RISK_COLORS = {
@@ -18,6 +28,13 @@ const RISK_COLORS = {
     high: 'risk-high',
     extreme: 'risk-extreme'
 };
+
+function formatCurrency(value) {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        return currencyFormatter.format(0);
+    }
+    return currencyFormatter.format(value);
+}
 
 function getRiskColorHex(irlScore) {
     if (irlScore >= 86) return '#8b5cf6'; // Roxo (Extremo)
@@ -78,12 +95,6 @@ function renderDetailCard(occurrence) {
     const { irlScore, riskLevel, riskColor, title, numero_os, location, bairro, exposureDays, trafficScore, proximityScore, proximityText, baseIndemnization, repairCost } = occurrence;
     const colorHex = getRiskColorHex(irlScore);
 
-    // Formatação de Moeda
-    const formatCurrency = (value) => {
-        if (typeof value !== 'number') return 'R$ N/A';
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-    };
-
     // Fatores de IRL (Para o componente Fatores de Risco)
     const factorItems = [
         { name: 'Exposição (Dias Aberto)', value: occurrence.exposureScore.toFixed(1), max: 25, unit: 'pts', status: `${exposureDays} dias` },
@@ -129,20 +140,26 @@ function renderDetailCard(occurrence) {
 
             <!-- 3. Simulação de Custos -->
             <div class="mb-4">
-                <h4 class="font-bold text-lg text-gray-700 mb-2">Simulação de Custos (Jurídico/Reparo)</h4>
-                <div class="bg-white p-4 rounded-lg border border-gray-200">
-                    <div class="cost-item">
-                        <span class="cost-label flex items-center"><i class="fas fa-hammer mr-2 text-blue-500"></i> Custo Estimado de Reparo (Direto)</span>
-                        <span class="cost-value text-blue-600">${formatCurrency(repairCost)}</span>
+                <h4 class="font-bold text-lg text-gray-700 mb-3">Impacto financeiro projetado</h4>
+                <div class="cost-grid">
+                    <div class="cost-pill repair">
+                        <span class="cost-label"><i class="fas fa-hammer"></i> Reparo estimado</span>
+                        <span class="cost-value">${formatCurrency(repairCost)}</span>
+                        <small>Infraestrutura e manutenção</small>
                     </div>
-                    <div class="cost-item">
-                        <span class="cost-label flex items-center"><i class="fas fa-gavel mr-2 text-red-500"></i> Indenização Base (Risco Jurídico)</span>
-                        <span class="cost-value text-red-600">${formatCurrency(baseIndemnization)}</span>
+                    <div class="cost-pill legal">
+                        <span class="cost-label"><i class="fas fa-scale-balanced"></i> Exposição jurídica</span>
+                        <span class="cost-value">${formatCurrency(baseIndemnization)}</span>
+                        <small>Indenizações e acordos</small>
                     </div>
-                    <div class="cost-item border-none pt-3">
-                        <span class="cost-label text-lg font-extrabold text-gray-800 flex items-center"><i class="fas fa-hand-holding-usd mr-2 text-green-600"></i> Custo Total Simulado (R + I)</span>
-                        <span class="cost-value text-green-600 text-lg">${formatCurrency(repairCost + baseIndemnization)}</span>
+                </div>
+                <div class="cost-total-card">
+                    <div>
+                        <p>Total projetado</p>
+                        <h3>${formatCurrency(repairCost + baseIndemnization)}</h3>
+                        <small>Considerando probabilidade IRL ${irlScore}%</small>
                     </div>
+                    <span class="badge-soft">${riskLevel}</span>
                 </div>
             </div>
             <p class="text-xs text-gray-400 mt-4 text-center">Os valores simulados representam o potencial impacto financeiro. A pontuação IRL indica a probabilidade de conversão do risco.</p>
@@ -156,7 +173,7 @@ function renderDetailCard(occurrence) {
 
 function renderKPIs() {
     const totalOccurrences = processedOccurrences.length;
-    
+
     // Calcula a média do IRL
     const totalIRLScore = processedOccurrences.reduce((sum, item) => sum + item.irlScore, 0);
     const mediaIRL = totalOccurrences > 0 ? (totalIRLScore / totalOccurrences).toFixed(0) : 0;
@@ -166,16 +183,18 @@ function renderKPIs() {
     const criticasPercent = totalOccurrences > 0 ? ((criticasCount / totalOccurrences) * 100).toFixed(0) : 0;
 
     // Custo
-    const totalRepairCost = processedOccurrences.reduce((sum, item) => sum + item.repairCost, 0);
+    const totalRepairCost = processedOccurrences.reduce((sum, item) => sum + (item.repairCost || 0), 0);
+    const totalIndemnizations = processedOccurrences.reduce((sum, item) => sum + (item.baseIndemnization || 0), 0);
+    const totalFinanceImpact = totalRepairCost + totalIndemnizations;
     const mediaRepairCost = totalOccurrences > 0 ? (totalRepairCost / totalOccurrences) : 0;
-    
-    const totalOS = totalOccurrences; // Usando as ocorrências filtradas
-    
-    // Formatação de Moeda
-    const formatCurrency = (value) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
-    };
+    const mediaFinanceImpact = totalOccurrences > 0 ? (totalFinanceImpact / totalOccurrences) : 0;
 
+    const totalOS = totalOccurrences; // Usando as ocorrências filtradas
+
+    if (document.getElementById('kpi-impacto-total')) {
+        document.getElementById('kpi-impacto-total').textContent = formatCurrency(totalFinanceImpact);
+        document.getElementById('kpi-impacto-medio').textContent = `Média por ocorrência — ${formatCurrency(mediaFinanceImpact)}`;
+    }
     document.getElementById('kpi-criticas').innerHTML = `${criticasCount} <span class="text-base text-gray-500">(${criticasPercent}%)</span>`;
     document.getElementById('kpi-media-irl').textContent = `${mediaIRL} / 100`;
     document.getElementById('kpi-baixo-custo').textContent = formatCurrency(mediaRepairCost);
@@ -224,7 +243,7 @@ function renderRanking() {
         let value = '';
         switch (currentRankingMode) {
             case 'custo':
-                value = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(item.repairCost + item.baseIndemnization);
+                value = formatCurrency((item.repairCost || 0) + (item.baseIndemnization || 0));
                 break;
             case 'exposicao':
                 value = `${item.exposureDays} dias`;
@@ -352,18 +371,220 @@ function renderMap(occurrencesToRender) {
 function filterOccurrences() {
     filteredOccurrences = processedOccurrences.filter(item => {
         // Filtro de Busca por Texto (Título, Endereço, OS)
-        const searchMatch = !currentSearchTerm || 
-                            item.title.toLowerCase().includes(currentSearchTerm.toLowerCase()) ||
-                            item.location.toLowerCase().includes(currentSearchTerm.toLowerCase()) ||
-                            (item.numero_os && item.numero_os.toLowerCase().includes(currentSearchTerm.toLowerCase()));
+        const normalizedTerm = currentSearchTerm.toLowerCase();
+        const searchMatch = !currentSearchTerm ||
+                            (item.title || '').toLowerCase().includes(normalizedTerm) ||
+                            (item.location || '').toLowerCase().includes(normalizedTerm) ||
+                            (item.bairro || '').toLowerCase().includes(normalizedTerm) ||
+                            (item.numero_os && item.numero_os.toLowerCase().includes(normalizedTerm));
 
         // Filtro de Status da OS
         const statusMatch = currentStatusFilter === 'Todos' || item.osStatus === currentStatusFilter;
 
-        // Filtro de Categoria (Não implementado no HTML, mas mantido na lógica)
-        const categoriaMatch = currentCategoriaFilter === 'Todos' || item.categoryLabel === currentCategoriaFilter;
+        // Filtro de Categoria
+        const categoriaMatch = currentCategoriaFilter === 'Todos' || item.category === currentCategoriaFilter || item.categoryLabel === currentCategoriaFilter;
 
-        return searchMatch && statusMatch && categoriaMatch;
+        // Filtro de Bairro
+        const bairroMatch = currentBairroFilter === 'Todos' || (item.bairro && item.bairro.toLowerCase() === currentBairroFilter.toLowerCase());
+
+        // Filtro de risco
+        let riskMatch = true;
+        if (currentRiskFilter !== 'Todos') {
+            if (currentRiskFilter === 'extremo') riskMatch = item.irlScore >= 86;
+            else if (currentRiskFilter === 'alto') riskMatch = item.irlScore >= 61 && item.irlScore <= 85;
+            else if (currentRiskFilter === 'medio') riskMatch = item.irlScore >= 31 && item.irlScore <= 60;
+            else if (currentRiskFilter === 'baixo') riskMatch = item.irlScore <= 30;
+        }
+
+        const irlRangeMatch = item.irlScore >= currentIRLRange[0] && item.irlScore <= currentIRLRange[1];
+
+        const totalCost = (item.repairCost || 0) + (item.baseIndemnization || 0);
+        const costRangeMatch = totalCost >= currentCostRange[0] && totalCost <= currentCostRange[1];
+
+        return searchMatch && statusMatch && categoriaMatch && bairroMatch && riskMatch && irlRangeMatch && costRangeMatch;
+    });
+}
+
+function populateBairroFilter() {
+    const bairroSelect = document.getElementById('filtroBairro');
+    if (!bairroSelect) return;
+    const bairros = Array.from(new Set(processedOccurrences.map(item => item.bairro).filter(Boolean))).sort();
+    const options = ['<option value="Todos">Todos os bairros</option>', ...bairros.map(b => `<option value="${b}">${b}</option>`)];
+    bairroSelect.innerHTML = options.join('');
+}
+
+function calibrateCostSlider() {
+    const costValues = processedOccurrences.map(item => (item.repairCost || 0) + (item.baseIndemnization || 0));
+    const maxCost = costValues.length ? Math.max(...costValues) : 50000;
+    dynamicCostUpperBound = Math.max(5000, Math.ceil(maxCost / 1000) * 1000);
+    const costMinInput = document.getElementById('filtroCustoMin');
+    const costMaxInput = document.getElementById('filtroCustoMax');
+    if (costMinInput && costMaxInput) {
+        costMinInput.max = dynamicCostUpperBound;
+        costMaxInput.max = dynamicCostUpperBound;
+        costMaxInput.value = dynamicCostUpperBound;
+    }
+    currentCostRange = [0, dynamicCostUpperBound];
+    updateCostRangeLabel();
+}
+
+function updateIRLRangeLabel() {
+    const label = document.getElementById('rangeIrlLabel');
+    if (label) {
+        label.textContent = `${currentIRLRange[0]} - ${currentIRLRange[1]} pts`;
+    }
+}
+
+function updateCostRangeLabel() {
+    const label = document.getElementById('rangeCustoLabel');
+    if (label) {
+        label.textContent = `${formatCurrency(currentCostRange[0])} - ${formatCurrency(currentCostRange[1])}`;
+    }
+}
+
+function setupRangeInputs(minId, maxId, callback) {
+    const minInput = document.getElementById(minId);
+    const maxInput = document.getElementById(maxId);
+    if (!minInput || !maxInput) return;
+
+    const handler = (event) => {
+        let min = Number(minInput.value);
+        let max = Number(maxInput.value);
+        if (min > max) {
+            if (event.target === minInput) {
+                max = min;
+                maxInput.value = max;
+            } else {
+                min = max;
+                minInput.value = min;
+            }
+        }
+        callback([min, max]);
+    };
+
+    minInput.addEventListener('input', handler);
+    maxInput.addEventListener('input', handler);
+}
+
+function handlePillGroup(containerId, callback) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.querySelectorAll('.pill-filter').forEach(button => {
+        button.addEventListener('click', () => {
+            container.querySelectorAll('.pill-filter').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            callback(button.getAttribute('data-value'));
+        });
+    });
+}
+
+function setActivePill(containerId, value) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('.pill-filter').forEach(button => {
+        if (button.getAttribute('data-value') === value) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    });
+}
+
+function resetFilters(skipRender = false) {
+    currentStatusFilter = 'Todos';
+    currentRiskFilter = 'Todos';
+    currentCategoriaFilter = 'Todos';
+    currentBairroFilter = 'Todos';
+    currentIRLRange = [0, 100];
+    currentCostRange = [0, dynamicCostUpperBound];
+    currentSearchTerm = '';
+
+    const searchInput = document.getElementById('filtroBusca');
+    if (searchInput) searchInput.value = '';
+
+    const categoriaSelect = document.getElementById('filtroCategoria');
+    if (categoriaSelect) categoriaSelect.value = 'Todos';
+
+    const bairroSelect = document.getElementById('filtroBairro');
+    if (bairroSelect) bairroSelect.value = 'Todos';
+
+    const irlMinInput = document.getElementById('filtroIrlMin');
+    const irlMaxInput = document.getElementById('filtroIrlMax');
+    if (irlMinInput && irlMaxInput) {
+        irlMinInput.value = currentIRLRange[0];
+        irlMaxInput.value = currentIRLRange[1];
+    }
+    updateIRLRangeLabel();
+
+    const costMinInput = document.getElementById('filtroCustoMin');
+    const costMaxInput = document.getElementById('filtroCustoMax');
+    if (costMinInput && costMaxInput) {
+        costMinInput.value = currentCostRange[0];
+        costMaxInput.value = currentCostRange[1];
+        costMinInput.max = dynamicCostUpperBound;
+        costMaxInput.max = dynamicCostUpperBound;
+    }
+    updateCostRangeLabel();
+
+    setActivePill('statusFilters', 'Todos');
+    setActivePill('riskFilters', 'Todos');
+
+    if (!skipRender) {
+        applyFiltersAndRender();
+    }
+}
+
+function setupFilterInteractions() {
+    const searchInput = document.getElementById('filtroBusca');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value.trim();
+            applyFiltersAndRender();
+        });
+    }
+
+    const categoriaSelect = document.getElementById('filtroCategoria');
+    if (categoriaSelect) {
+        categoriaSelect.addEventListener('change', (e) => {
+            currentCategoriaFilter = e.target.value;
+            applyFiltersAndRender();
+        });
+    }
+
+    const bairroSelect = document.getElementById('filtroBairro');
+    if (bairroSelect) {
+        bairroSelect.addEventListener('change', (e) => {
+            currentBairroFilter = e.target.value;
+            applyFiltersAndRender();
+        });
+    }
+
+    const resetButton = document.getElementById('btnLimparFiltros');
+    if (resetButton) {
+        resetButton.addEventListener('click', () => resetFilters());
+    }
+
+    handlePillGroup('statusFilters', (value) => {
+        currentStatusFilter = value;
+        applyFiltersAndRender();
+    });
+
+    handlePillGroup('riskFilters', (value) => {
+        currentRiskFilter = value;
+        applyFiltersAndRender();
+    });
+
+    setupRangeInputs('filtroIrlMin', 'filtroIrlMax', (range) => {
+        currentIRLRange = range;
+        updateIRLRangeLabel();
+        applyFiltersAndRender();
+    });
+
+    setupRangeInputs('filtroCustoMin', 'filtroCustoMax', (range) => {
+        currentCostRange = range;
+        updateCostRangeLabel();
+        applyFiltersAndRender();
     });
 }
 
@@ -419,7 +640,9 @@ async function fetchData() {
         if (json.status === 'success') {
             occurrences = json.occurrences;
             processedOccurrences = processOccurrences(occurrences);
-            
+            populateBairroFilter();
+            calibrateCostSlider();
+            resetFilters(true);
             applyFiltersAndRender();
         } else {
             console.error('Erro ao buscar dados IRL:', json.message);
@@ -440,24 +663,7 @@ window.onload = function() {
     // Adiciona o evento de reset para o detalhe
     selectOccurrence(null);
 
-    // Event Listeners para Filtros
-    document.getElementById('filtroStatus').addEventListener('change', (e) => {
-        currentStatusFilter = e.target.value;
-        applyFiltersAndRender();
-    });
-    // O filtroLocalizacao e filtroCategoria estão no JS mas não no HTML atual.
-    // document.getElementById('filtroLocalizacao').addEventListener('change', (e) => {
-    //     currentLocalizacaoFilter = e.target.value;
-    //     applyFiltersAndRender();
-    // });
-    // document.getElementById('filtroCategoria').addEventListener('change', (e) => {
-    //     currentCategoriaFilter = e.target.value;
-    //     applyFiltersAndRender();
-    // });
-    document.getElementById('filtroBusca').addEventListener('input', (e) => {
-        currentSearchTerm = e.target.value;
-        applyFiltersAndRender();
-    });
+    setupFilterInteractions();
 
     // Event Listeners para Abas de Ranking
     document.querySelectorAll('.ranking-tab').forEach(button => {
