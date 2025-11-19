@@ -109,52 +109,146 @@
         /* Filtros Avançados */
         .filters {
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 24px;
+            border-radius: 18px;
+            margin-bottom: 28px;
+            box-shadow: 0 12px 25px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
         }
 
         .filters-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
         }
 
         .filter-group {
             display: flex;
             flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group.full {
+            grid-column: 1 / -1;
         }
 
         .filter-group label {
             font-size: 13px;
             font-weight: 600;
             color: #475569;
-            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .filter-group select,
-        .filter-group input {
-            padding: 10px 12px;
+        .filter-group input,
+        .search-input input {
+            padding: 12px 14px;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 10px;
+            font-size: 15px;
             font-family: 'Poppins', sans-serif;
             transition: all 0.2s;
+            background: #f8fafc;
         }
 
         .filter-group select:focus,
-        .filter-group input:focus {
+        .filter-group input:focus,
+        .search-input input:focus {
             outline: none;
             border-color: #4338ca;
-            box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1);
+            box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.15);
+            background: #fff;
+        }
+
+        .search-input {
+            position: relative;
+        }
+
+        .search-input i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-input input {
+            padding-left: 40px;
         }
 
         .filter-actions {
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .pill-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .pill-filter {
+            border: 1px solid #cbd5f5;
+            background: #eef2ff;
+            color: #4338ca;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pill-filter.active {
+            background: #4338ca;
+            color: white;
+            box-shadow: 0 8px 15px rgba(67, 56, 202, 0.25);
+        }
+
+        .range-wrapper {
+            background: #f8fafc;
+            border: 1px dashed #cbd5f5;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .range-values {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4338ca;
+            margin-top: 8px;
+        }
+
+        .range-values span {
+            background: white;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .range-wrapper input[type="range"] {
+            width: 100%;
         }
 
         /* Container Principal */
@@ -170,13 +264,30 @@
             margin-bottom: 24px;
         }
         
-        .kpi-item { 
-            text-align: center; 
-            padding: 24px; 
-            border-radius: 12px; 
-            background: white; 
+        .kpi-item {
+            text-align: center;
+            padding: 24px;
+            border-radius: 12px;
+            background: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             transition: all 0.3s;
+        }
+
+        .kpi-item.featured {
+            background: linear-gradient(120deg, #312e81, #4338ca);
+            color: white;
+            box-shadow: 0 25px 35px rgba(49, 46, 129, 0.35);
+            border: none;
+        }
+
+        .kpi-item.featured .kpi-label,
+        .kpi-item.featured .kpi-subtext {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .kpi-item.featured .kpi-value {
+            color: #fff;
+            font-size: 42px;
         }
 
         .kpi-item:hover {
@@ -191,10 +302,16 @@
             line-height: 1;
         }
         
-        .kpi-label { 
-            font-size: 13px; 
+        .kpi-label {
+            font-size: 13px;
             color: #64748b;
             font-weight: 500;
+        }
+
+        .kpi-subtext {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 6px;
         }
 
         /* Layout Grid Principal */
@@ -235,23 +352,6 @@
             height: 450px; 
             border-radius: 12px;
             border: 2px solid #e2e8f0;
-        }
-
-        .map-controls {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-
-        .map-controls input,
-        .map-controls select {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
         }
 
         /* Ranking */
@@ -493,83 +593,96 @@
 
         <!-- Filtros Avançados -->
         <div class="filters">
-            <div class="filters-grid">
-                <div class="filter-group">
-                    <label><i class="fas fa-calendar-alt"></i> Período</label>
-                    <select id="filterPeriodo">
-                        <option value="7">Últimos 7 dias</option>
-                        <option value="30" selected>Últimos 30 dias</option>
-                        <option value="90">Últimos 90 dias</option>
-                        <option value="180">Últimos 6 meses</option>
-                        <option value="365">Último ano</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-shield-alt"></i> Nível de Risco</label>
-                    <select id="filterRisco">
-                        <option value="">Todos os Níveis</option>
-                        <option value="extremo">🔴 Extremo</option>
-                        <option value="alto">🟠 Alto</option>
-                        <option value="medio">🟡 Médio</option>
-                        <option value="baixo">🟢 Baixo</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-map-marker-alt"></i> Região</label>
-                    <select id="filterRegiao">
-                        <option value="">Todas as Regiões</option>
-                        <option value="centro">Centro</option>
-                        <option value="norte">Norte</option>
-                        <option value="sul">Sul</option>
-                        <option value="leste">Leste</option>
-                        <option value="oeste">Oeste</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-list"></i> Categoria</label>
-                    <select id="filterCategoria">
-                        <option value="">Todas as Categorias</option>
-                        <option value="asfalto_dano">Asfalto Danificado</option>
-                        <option value="calcada_dano">Calçada Danificada</option>
-                        <option value="iluminacao_publica">Iluminação Pública</option>
-                        <option value="fiacao_exposta">Fiação Exposta</option>
-                        <option value="arvore_dano">Árvore Danificada</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-dollar-sign"></i> Faixa de Custo</label>
-                    <select id="filterCusto">
-                        <option value="">Todos os Custos</option>
-                        <option value="0-1000">Até R$ 1.000</option>
-                        <option value="1000-5000">R$ 1.000 - R$ 5.000</option>
-                        <option value="5000-10000">R$ 5.000 - R$ 10.000</option>
-                        <option value="10000-999999">Acima de R$ 10.000</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-flag"></i> Status</label>
-                    <select id="filterStatus">
-                        <option value="">Todos os Status</option>
-                        <option value="ABERTA">Aberta</option>
-                        <option value="EM_CAMPO">Em Campo</option>
-                        <option value="CONCLUIDA">Concluída</option>
-                        <option value="APROVADA">Aprovada</option>
-                    </select>
-                </div>
+            <div class="filter-header">
+                <h3><i class="fas fa-sliders-h"></i> Filtros inteligentes do IRL</h3>
+                <button class="btn btn-secondary" id="btnLimparFiltros">
+                    <i class="fas fa-undo"></i> Limpar filtros
+                </button>
             </div>
-            <div class="filter-actions">
-                <button class="btn btn-secondary" onclick="limparFiltros()">
-                    <i class="fas fa-times"></i> Limpar Filtros
-                </button>
-                <button class="btn btn-primary" onclick="aplicarFiltros()">
-                    <i class="fas fa-filter"></i> Aplicar Filtros
-                </button>
+            <div class="filters-grid">
+                <div class="filter-group full">
+                    <label>Busca rápida</label>
+                    <div class="search-input">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="filtroBusca" placeholder="Busque por OS, endereço ou categoria...">
+                    </div>
+                </div>
+                <div class="filter-group full">
+                    <label>Status da OS</label>
+                    <div class="pill-group" id="statusFilters">
+                        <button class="pill-filter active" data-value="Todos">Todos</button>
+                        <button class="pill-filter" data-value="Aberta">Aberta</button>
+                        <button class="pill-filter" data-value="Nova">Nova</button>
+                        <button class="pill-filter" data-value="Em Atraso">Em atraso</button>
+                        <button class="pill-filter" data-value="Concluída">Concluída</button>
+                        <button class="pill-filter" data-value="Cancelada">Cancelada</button>
+                    </div>
+                </div>
+                <div class="filter-group full">
+                    <label>Nível de risco</label>
+                    <div class="pill-group" id="riskFilters">
+                        <button class="pill-filter active" data-value="Todos">Todos</button>
+                        <button class="pill-filter" data-value="extremo">🔴 Extremo</button>
+                        <button class="pill-filter" data-value="alto">🟠 Alto</button>
+                        <button class="pill-filter" data-value="medio">🟡 Médio</button>
+                        <button class="pill-filter" data-value="baixo">🟢 Baixo</button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Categoria</label>
+                    <select id="filtroCategoria">
+                        <option value="Todos">Todas as categorias</option>
+                        <option value="asfalto_dano">Asfalto danificado</option>
+                        <option value="calcada_dano">Calçada danificada</option>
+                        <option value="iluminacao_publica">Iluminação pública</option>
+                        <option value="fiacao_exposta">Fiação exposta</option>
+                        <option value="arvore_dano">Árvore danificada</option>
+                        <option value="lixo_irregular">Lixo/Entulho</option>
+                        <option value="obra_irregular">Obra irregular</option>
+                        <option value="mato_alto">Mato alto</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Bairro</label>
+                    <select id="filtroBairro">
+                        <option value="Todos">Todos os bairros</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Intervalo IRL</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="filtroIrlMin" min="0" max="100" value="0" step="1">
+                        <input type="range" id="filtroIrlMax" min="0" max="100" value="100" step="1">
+                        <div class="range-values">
+                            <span id="rangeIrlLabel">0 - 100 pts</span>
+                            <span>escala IRL</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Impacto financeiro (R$)</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="filtroCustoMin" min="0" max="50000" value="0" step="500">
+                        <input type="range" id="filtroCustoMax" min="0" max="50000" value="50000" step="500">
+                        <div class="range-values">
+                            <span id="rangeCustoLabel">R$ 0 - R$ 50.000</span>
+                            <span>projetado</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="irl-container">
             <!-- 1. Indicadores Chave (KPIs) -->
             <div class="kpi-grid" id="kpi-area">
+                <div class="kpi-item featured">
+                    <div class="kpi-label">Impacto Financeiro Projetado</div>
+                    <div class="kpi-value" id="kpi-impacto-total">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="kpi-subtext" id="kpi-impacto-medio">Média por ocorrência —</div>
+                </div>
                 <div class="kpi-item">
                     <div class="kpi-value text-red-600" id="kpi-criticas">
                         <i class="fas fa-spinner fa-spin"></i>
@@ -592,7 +705,7 @@
                     <div class="kpi-value text-indigo-600" id="kpi-alto-custo">
                         <i class="fas fa-spinner fa-spin"></i>
                     </div>
-                    <div class="kpi-label">Total de OS Abertas</div>
+                    <div class="kpi-label">Ocorrências monitoradas</div>
                 </div>
             </div>
 
@@ -604,9 +717,6 @@
                         <div class="irl-card-title">
                             <i class="fas fa-map-marked-alt"></i>
                             Distribuição Geográfica do Risco (IRL)
-                        </div>
-                        <div class="map-controls">
-                            <input type="text" id="filtroBusca" placeholder="🔍 Buscar por endereço ou número de OS...">
                         </div>
                         <div id="irl-map"></div>
                         <div style="margin-top: 16px; display: flex; gap: 16px; flex-wrap: wrap;">
@@ -686,48 +796,13 @@
     <!-- JavaScript -->
     <script src="{{ url_for('static', filename='js/irl_dashboard.js') }}" defer></script>
     <script>
-        // Funções auxiliares
         function exportarRelatorioIRL() {
             alert('Funcionalidade de exportação em desenvolvimento');
-            // Implementar exportação para PDF
         }
 
         function atualizarDados() {
             location.reload();
         }
-
-        function limparFiltros() {
-            document.getElementById('filterPeriodo').value = '30';
-            document.getElementById('filterRisco').value = '';
-            document.getElementById('filterRegiao').value = '';
-            document.getElementById('filterCategoria').value = '';
-            document.getElementById('filterCusto').value = '';
-            document.getElementById('filterStatus').value = '';
-            aplicarFiltros();
-        }
-
-        function aplicarFiltros() {
-            // Esta função será integrada com o irl_dashboard.js
-            console.log('Aplicando filtros...');
-            if (typeof carregarDadosIRL === 'function') {
-                carregarDadosIRL();
-            }
-        }
-
-        // Event listeners para os filtros
-        document.addEventListener('DOMContentLoaded', function() {
-            // Tabs de ranking
-            document.querySelectorAll('.ranking-tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    document.querySelectorAll('.ranking-tab').forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    const mode = this.getAttribute('data-mode');
-                    if (typeof alternarModoRanking === 'function') {
-                        alternarModoRanking(mode);
-                    }
-                });
-            });
-        });
     </script>
 </body>
 </html>
