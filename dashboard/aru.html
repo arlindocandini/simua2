@@ -219,6 +219,75 @@
                 </div>
             </div>
 
+            {% set taxa_abertas = (resumo.ocorrencias_abertas / resumo.total_pontos * 100) if resumo.total_pontos else 0 %}
+            {% set taxa_criticos = (resumo.pontos_criticos / resumo.total_pontos * 100) if resumo.total_pontos else 0 %}
+            {% set top_categoria = categorias_heat|list|first if categorias_heat else None %}
+            {% set cluster_prioritario = clusters[0] if clusters else None %}
+
+            <div class="insight-grid">
+                <div class="insight-card emphasis">
+                    <div class="insight-header">
+                        <p class="eyebrow">Nível de reincidência</p>
+                        <h3>{{ resumo.total_pontos }} pontos monitorados</h3>
+                    </div>
+                    <div class="progress-group">
+                        <div class="progress-row">
+                            <span>Críticos</span>
+                            <span>{{ taxa_criticos|round(1) }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill danger" style="width: {{ [taxa_criticos, 100]|min }}%"></div>
+                        </div>
+                        <p class="text-muted small">{{ resumo.pontos_criticos }} locais têm 3+ reincidências e merecem rondas reforçadas.</p>
+                    </div>
+                    <div class="progress-group">
+                        <div class="progress-row">
+                            <span>Janela monitorada</span>
+                            <span>{{ resumo.dias_monitorados }} dias</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill info" style="width: {{ [resumo.dias_monitorados / 3, 100]|min }}%"></div>
+                        </div>
+                        <p class="text-muted small">Período suficiente para perceber padrões sazonais e repetição.</p>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <p class="eyebrow">Pendências e SLA</p>
+                        <h3>{{ resumo.ocorrencias_abertas }} ordens em aberto</h3>
+                    </div>
+                    <div class="chip-row">
+                        <span class="pill small pill-alert">{{ resumo.pontos_criticos }} críticos</span>
+                        <span class="pill small pill-success">{{ resumo.total_pontos - resumo.pontos_criticos if resumo.total_pontos > resumo.pontos_criticos else 0 }} estáveis</span>
+                    </div>
+                    <p class="text-muted small">{{ taxa_abertas|round(1) }}% dos pontos ainda aguardam conclusão. Mire equipes onde o risco é alto e as aberturas são recorrentes.</p>
+                    <div class="insight-callout">
+                        <i class="fas fa-bullseye"></i>
+                        <span>Priorize rotas próximas para reduzir tempo de deslocamento e evitar novas ocorrências.</span>
+                    </div>
+                </div>
+
+                <div class="insight-card list">
+                    <div class="insight-header">
+                        <p class="eyebrow">Interpretação rápida</p>
+                        <h3>Para onde olhar</h3>
+                    </div>
+                    <ul class="insight-list">
+                        {% if top_categoria %}
+                            <li><i class="fas fa-layer-group"></i> Categoria mais reincidente: {{ top_categoria.replace('_', ' ')|capitalize }} ({{ categorias_heat[top_categoria] }} registros).</li>
+                        {% else %}
+                            <li><i class="fas fa-layer-group"></i> Nenhuma categoria dominante neste recorte.</li>
+                        {% endif %}
+                        {% if cluster_prioritario %}
+                            <li><i class="fas fa-location-dot"></i> Endereço mais sensível: {{ cluster_prioritario.endereco or 'Localização não informada' }} — {{ cluster_prioritario.recorrencias }} reincidências.</li>
+                        {% endif %}
+                        <li><i class="fas fa-calendar-check"></i> Combine filtros de data + região para revelar ciclos semanais ou sazonais.</li>
+                        <li><i class="fas fa-shield-alt"></i> Use a lista de foco para direcionar blitz e vistorias programadas.</li>
+                    </ul>
+                </div>
+            </div>
+
             {% if not clusters and disponibilidade_dados %}
                 <div class="info-banner">
                     <i class="fas fa-circle-info"></i>

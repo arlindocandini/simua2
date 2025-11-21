@@ -805,6 +805,125 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
+.insight-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1100px) {
+    .insight-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+}
+
+.insight-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.insight-card.emphasis {
+    background: linear-gradient(145deg, rgba(99, 102, 241, 0.1), rgba(16, 185, 129, 0.12));
+    border-color: rgba(99, 102, 241, 0.35);
+    box-shadow: var(--shadow-md);
+}
+
+.insight-header h3 {
+    margin: 0.15rem 0 0;
+    font-size: 1.1rem;
+}
+
+.progress-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.progress-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: var(--bg-main);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--primary);
+    transition: width 0.3s ease;
+}
+
+.progress-fill.danger { background: linear-gradient(90deg, #ef4444, #f97316); }
+.progress-fill.info { background: linear-gradient(90deg, #0ea5e9, #22c55e); }
+
+.chip-row {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.insight-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
+    background: rgba(79, 70, 229, 0.05);
+    border: 1px dashed rgba(79, 70, 229, 0.35);
+    color: var(--text-secondary);
+}
+
+.insight-callout i {
+    color: var(--primary);
+    margin-top: 0.05rem;
+}
+
+.insight-card.list {
+    gap: 0.5rem;
+}
+
+.insight-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.insight-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.insight-list i {
+    color: var(--primary);
+}
+
+.text-muted.small {
+    font-size: 0.85rem;
+}
+
 .pill-column {
     display: flex;
     flex-direction: column;
